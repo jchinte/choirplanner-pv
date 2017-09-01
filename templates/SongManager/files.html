@@ -1,0 +1,65 @@
+
+{% load song_extras %}
+{% if files %}
+	<ul>
+    {% for file in files %}
+        <li>
+        {% if flavour == "mobile" %}
+        <a href="{{ file.file.url }}" class="ui-btn ui-btn-inline" data-ajax="false">download</a> 
+        {% else %}
+        <a href="{{ file.file.url }}" class="ui-btn ui-btn-inline" data-ajax="false"><button>download</button></a> 
+        {% endif %}
+        {% if file.types %}
+		{{ file.types|join:", " }}
+		
+
+        {% else %}
+        {{ file.file.name }}
+        {% endif %}
+        {% for type in file.filetypes.all %}
+        	{% if type.type == "mp3" %}
+        		<audio src="{{ file.file.url|safe }}" controls>
+        			
+        			Your browser does not support the audio element.
+        		</audio>
+        	{% endif %}
+        {% endfor %}
+
+        {% if delete %}
+        <a href="{% url 'songfile_delete_view' song_pk file.pk %}">delete file</a>
+        {% endif %}
+        </li>
+    {% endfor %}
+    </ul>
+    
+{% else %}
+<p> no files available. </p>
+{% endif %}
+
+{% if youtube %}
+<div class="videoWrapper">
+<div id="ytplayer" ><iframe id="ytplayer" type="text/html" width="640" height="390"
+  src="http://www.youtube.com/embed?listType=search&list={{ song.search_terms|iriPlus|iriencode }}"
+  frameborder="0"/></div>
+  </div>
+
+<script>
+  // Load the IFrame Player API code asynchronously.
+  var tag = document.createElement('script');
+  tag.src = "https://www.youtube.com/player_api";
+  var firstScriptTag = document.getElementsByTagName('script')[0];
+  firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+  // Replace the 'ytplayer' element with an <iframe> and
+  // YouTube player after the API code downloads.
+  var player;
+  function onYouTubePlayerAPIReady() {
+    player = new YT.Player('ytplayer', {
+      height: '390',
+      width: '640',
+      listType: 'search',
+      list:'{{ song.title|iriPlus }}'
+    });
+  }
+</script>
+{% endif %}

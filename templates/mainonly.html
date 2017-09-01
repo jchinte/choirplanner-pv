@@ -1,0 +1,12 @@
+
+	{% autoescape off %}
+<div {% if page_id %}id="{{ page_id }}"{% endif %}  data-role="page" data-title="Planner" class="reg {{ page_class }}">
+	{% endautoescape %}
+
+	<div role="main" class="ui-content jqm-content jqm-fullwidth">
+	{% block main %}{% endblock %}
+	<div id="ajax"></div>
+	</div>
+	
+{% block extra_js %}{% endblock %}
+</div>

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block extra_js %}
+<!--link rel="stylesheet" href="https://rawgithub.com/arschmitz/jquery-mobile-datepicker-wrapper/master/jquery.mobile.datepicker.css" /-->
+<!--link rel="stylesheet" href="{{ STATIC_URL }}jquery-ui/jquery-ui.min.css" /-->
+<link rel="stylesheet" href="{{ STATIC_URL }}css/event_form.css" />
+<!--script src="{{ STATIC_URL }}jquery-ui/jquery-ui.min.js" /-->
+<!--script src="https://rawgithub.com/jquery/jquery-ui/1-10-stable/ui/jquery.ui.datepicker.js"></script-->
+<!--script src="https://rawgithub.com/arschmitz/jquery-mobile-datepicker-wrapper/master/jquery.mobile.datepicker.js"></script-->
+<script type="text/javascript" src="{{ STATIC_URL }}jquery.form.js"></script>
+<script>{% include "mobile/Event_Planner/event_form.js" %}</script>
+{% endblock %}
+
+
+
+
+{% block main %}
+
+<p>
+{% if event %}
+	<form id="id_form" method="post" action="" 
+	ajax_url="" data-ajax="false">
+{% else %}
+	<form id="id_form" method="post" action="" 
+	ajax_url="" data-ajax="false">
+{% endif %}
+<table>
+{{ form }}
+</table>
+{% csrf_token %}
+<input id="id_Submit" type="submit" value="Save"/>
+</form>
+</p>
+{% if event %}
+<div id="formSet" data-role="collapsibleset" data-icon-pos="right">
+{% if formlist %}
+	{% for f in formlist %}
+	{% include "Event_Planner/new_seg_form.html" with form=f event=event %}
+	{% endfor %}
+{% endif %}
+</div>
+{% endif %}
+<div data-role="panel" id="chooseSongDialog" data-theme="a"  
+data-position="right" data-display="overlay" class="ui-corner-all">
+<h3> Choose Song... </h3>
+<form class="ui-filterable">
+<input id="autocomplete-input" data-type="search" placeholder="Find a song...">
+</form>
+<ul id="autocomplete" data-role="listview" data-inset="true" data-filter="false" data-input="#autocomplete-input"></ul>
+</div>
+
+<div data-role="popup" id="deleteDialog" data-overlay-theme="a" data-theme="a" data-dismissible="false" style="max-width:400px;">
+<div data-role="header" data-theme="a">
+<h1>Delete Song?</h1>
+</div>
+<div role="main" class="ui-content">
+	<h3 class="ui-title">Are you sure you want to delete this song?</h3>
+	<p>This action cannot be undone.</p>
+	<a href="#" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-a" data-rel="back">Cancel</a>
+	<a href="#" id="confirmDelete" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-a" data-rel="back" data-transition="flow">Delete</a>
+	</div>
+</div>
+
+{% endblock %}

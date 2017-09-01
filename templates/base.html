@@ -1,0 +1,196 @@
+
+{% extends 'dh5mbp/base.html' %}
+
+{% load staticfiles %}
+{% block title %}Planner{% endblock %}
+{% block content %}
+	{% if flavour == "mobile" %}
+
+	<div class="ui-page-theme-a">
+		<div  data-role="panel" data-position-fixed="true" data-display="push" id="nav-panel">
+			<ul data-role="listview">
+					<li>Menu</li>
+					<li data-icon="back"><a href="#" data-rel="close">Close Menu</a></li>
+					<li><a href="{% url "event_list_view" %}">Current Events</a></li>
+					<li><a href="{% url "event_archive_view" %}">Past Events</a></li>
+					<li><a href="{% url "song_list_view" %}">Song Database</a></li>
+					<li><a href="{% url "event_list_view" %}?flavour=full" data-ajax="false">Old-style site</a></li>
+			</ul>
+		</div> <!-- /panel -->
+	</div>
+
+		<div class="ui-bar-a" data-role="header" data-id="choirplanner" data-position="fixed">
+			<div data-type'"horizontal" data-role="controlgroup" class="ui-btn-left ui-mini" > 
+				<a class="ui-btn ui-icon-bars ui-btn-icon-notext" data-inline="true" href="#nav-panel">Menu</a>
+					{% block icon_links %}{% endblock %}
+			</div>
+
+		{% if user.is_authenticated %}
+			<h1>
+				Planner - {{ user.username }}
+			</h1>
+			<a href="{% url 'django.contrib.auth.views.logout_then_login' %}" data-icon="sign-out" data-ajax="false" class="ui-btn-right">Sign out</a>
+			
+		{% else %}
+			<h1>
+				Planner - {{ user.username }}
+			</h1>	
+			<a href="{% url "login_view" %}?next={{ request.build_absolute_uri }}" data-icon="sign-in" data-ajax="false" class="ui-btn-right">Sign in</a>
+		{% endif %}
+		</div>
+	
+		<div data-role="footer" data-id="choirplanner"   data-position="fixed">
+				<div class="ui-bar-a" data-role="navbar"> 
+					<ul>
+						<li><a href="{% url "event_list_view" %}">Current Events</a></li>
+						<li><a href="{% url "event_archive_view" %}">Past Events</a></li>
+						<li><a href="{% url "song_list_view" %}">Song Database</a></li>
+					</ul>
+				</div>
+		</div>
+
+	{% else %}
+	    <div class="fullHeader noPrint">
+		{% if user.is_authenticated %}
+    		<p>Welcome, {{ user.username }}. Thanks for logging in.  <a href="{% url 'django.contrib.auth.views.logout_then_login' %}">logout</a></p>
+    	{% else %}
+    		<p>Welcome. Please <a href="{% url "login_view" %}?next={{ request.build_absolute_uri }}">log in</a>.</p>
+		{% endif %}
+		</div>
+	{% endif %}
+
+
+	{% autoescape off %}
+		<div   {% if page_id %}id="{{ page_id }}"{% endif %} data-role="page" data-title="Planner" class="reg {{ page_class }}" data-dom-cache="false">
+	{% endautoescape %}
+	{% if flavour == "mobile" %}
+
+	{% endif %}
+	<div role="main" class="ui-content jqm-content jqm-fullwidth">
+	{% block main %}{% endblock %}
+	<div id="ajax"></div>
+	</div>
+
+{% block extra_js %}{% endblock %}
+</div>
+{{ debug }}
+{% if flavour != "mobile" %}
+
+     <div class="fullFooter noPrint">
+     <ul>
+		<li class="currentEvents"><a href="{% url "event_list_view" %}">Current Events</a></li>
+		<li class="pastEvents"><a href="{% url "event_archive_view" %}">Past Events</a></li>
+		<li class="songDatabase"><a href="{% url "song_list_view" %}">Song Database</a></li>
+		<li class="toMobile"><a href="{% url "event_list_view" %}?flavour=mobile">Mobile</a></li>
+	</ul>
+	</div>
+{% endif %}
+{% endblock %}
+
+
+{% block dh5mbp_js %} 
+{% if flavour == "mobile" %}
+{{ block.super }}
+{% endif %}
+{% endblock %}
+{% block dh5mbp_css %}
+{% if flavour == "mobile" %}
+{{ block.super }}
+<link href="{{ STATIC_URL }}icon-pack-custom.css" rel="stylesheet" type="text/css" />
+{% endif %}
+{% endblock %}
+
+{% block head %}
+		<!--meta name="viewport" content="width=device-width, initial-scale=1"-->
+		<link href="{{ STATIC_URL }}style.css?version_1.0" rel="stylesheet" type="text/css" />
+		{{ block.super }}
+		
+		
+		<link rel="shortcut icon" type="image/png" href="{{ STATIC_URL }}/favicon.ico">
+	{% if flavour != "mobile" %}
+		<link type="text/css" href="{{ STATIC_URL }}jquery-ui/jquery-ui.css" rel="stylesheet" />
+		{% else %}
+	<script>
+		$(function() {
+			$( "[data-role='panel']" ).panel();
+			$( "[data-role='listview']" ).listview();
+			$( "[data-role='navbar']" ).navbar();
+			$( "[data-role='header'], [data-role='footer']" ).toolbar().toolbar("updatePagePadding");
+
+		});
+		// Update the contents of the toolbars
+		/*
+		$( document ).on( "pagecontainerchange", function() {
+			// Each of the four pages in this demo has a data-title attribute
+			// which value is equal to the text of the nav button
+			// For example, on first page: <div data-role="page" data-title="Info">
+			var current = $( ".ui-page-active" ).jqmData( "title" );
+			// Change the heading
+			//$( "[data-role='header'] h1" ).text( current );
+			// Remove active class from nav buttons
+			$( "[data-role='navbar'] a.ui-btn-active" ).removeClass( "ui-btn-active" );
+			// Add active class to current nav button
+			$( "[data-role='navbar'] a" ).each(function() {
+				if ( $( this ).text() === current ) {
+					$( this ).addClass( "ui-btn-active" );
+				}
+			});
+		});*/
+		/*
+		$(document).on("pagebeforeshow", function(){
+			$(":jqmData(role=header)").toolbar("updatePagePadding");
+		});*/
+		$( document ).on( "mobileinit", function() {
+	        	$.extend( $.mobile , {
+        		//ajaxEnabled: false,
+        		hashListeningEnabled:false,
+        		pushStateEnabled: false
+        	});
+        	//$.mobile.changePage.defaults.changeHash=false;
+        	/*
+        	window.history.pushState({}, "Planner", document.URL);
+        	$.mobile.document.on("navigate", function(event, data){
+    			alert("navigate" + data.toPage);
+    			//console.log("nav to: " + data.toPage);
+    			if (typeof data.toPage === "string"){
+	    			console.log("nav to: " + data.toPage);
+	    			console.log("nav to: " + data);
+	    			var obj = {
+	    				baseURI: event.currentTarget.baseURI,
+	    				newURL: data.toPage,
+	    			}
+	    			alert("pushing "+data.toPage);
+	    			window.history.pushState(obj, "Planner", data.toPage);
+	    			
+    			}
+    		});
+    		
+    		$("a").click(function() {
+    			console.log("nav to: " + this.attr("href"));
+    			var obj = {
+    				baseURI: window.URL,
+    				newURL: this.attr("href"),
+    			}
+    			alert("pushing "+obj[newURL]);
+    			window.history.pushState(obj, "Planner", obj[newURL]);
+    		});
+    		$(window).on("popstate", function(event){
+    			console.log( event );
+    			$( ":mobile-pagecontainer" ).pagecontainer( "change", event.currentTarget.document.URL);
+    		});
+    		*/
+    	});
+
+	</script>
+		{% endif %}
+
+{% endblock %}
+{% block pre_main_script %}
+		<script type="text/javascript" src="{{ STATIC_URL }}json2.js"></script>
+{% if flavour != "mobile" %}
+		<script type="text/javascript" src="{{ STATIC_URL }}jquery-ui/jquery-ui.js"></script>
+{% endif %}
+
+{% endblock %}
+		<!--script type="text/javascript" src="{{ STATIC_URL }}jquery.js"></script-->
+		<!--script type="text/javascript" src="{{ STATIC_URL }}jquery-ui/js/jquery-ui-1.8.14.custom.min.js"></script-->

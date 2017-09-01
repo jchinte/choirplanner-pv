@@ -1,0 +1,54 @@
+<div class="sortables" id="sortable_{{ form.instance.id }}" data-role="collapsible" data-collapsed="true">
+	<h4><span class="segment-header">Section</span><span class="segment-modified"></span>
+	<span style="width:auto;overflow:hidden;" id="buffer" />
+		<span  style="float:right;" data-role="controlgroup" data-type="horizontal">
+		<a href="#" class="btnChooseSong ui-btn ui-btn-inline ui-icon-search ui-btn-icon-notext ui-mini" 
+						   id="edit_song_seg_{{ form.instance.id }}" value="choose song..." instance={{ form.instance.id }}>song</a>
+			<a href="#" class="buttonUp ui-btn ui-btn-inline ui-icon-arrow-u ui-btn-icon-notext ui-mini">Up</a>
+			<a href="#" class="buttonDown ui-btn ui-btn-inline ui-icon-arrow-d ui-btn-icon-notext ui-mini">Down</a>
+			<a class="delete_button ui-btn ui-btn-inline ui-icon-delete ui-btn-icon-notext ui-mini"
+					ajax_url="{% url 'json_segment_delete_view' event.pk form.instance.id %}"
+				       href="{% url 'segment_delete_view' event.pk form.instance.id %}">delete</a>
+		</span>
+	</h4>
+	<div>
+		<div>
+			{% if form.song %}
+				<form class="segment_form" id="id_form_{{ form.instance.id }}" method="post" action="{% url 'songsegment_update_view' event.pk form.instance.id %}"
+				    ajax_url="{% url 'json_segment_update_view' event.pk form.instance.id %}">
+			{% else %}
+				<form class="segment_form" id="id_form_{{ form.instance.id }}" method="post" action="{% url 'segment_update_view' event.pk form.instance.id %}"
+				    ajax_url="{% url 'json_segment_update_view' event.pk form.instance.id %}">
+			{% endif %}
+				{{ form.as_p }}
+				{% csrf_token %}
+				{% if form.song %}
+					
+					   <div>
+					   	Song: 
+						   <span id="segment-{{ form.instance.id }}-song-url" class="selectedSong">
+							{% if form.instance.song %}		   
+
+							   <a  href="{{ form.instance.song.get_absolute_url }}">
+								   {{ form.instance.song.title }}
+							   </a>
+							{% else %}
+							   Please choose a song.
+							{% endif %}
+						   </span>
+
+						   <span> <button type="button" data-inline="true" class="btnChooseSong" 
+						   id="edit_song_seg_{{ form.instance.id }}" value="choose song..." instance={{ form.instance.id }}>choose song...</button> </span>
+						</div>
+					
+				{% endif %}
+				<input  class="segment_button" id="id_Submit_{{ form.instance.id }}" type="submit" value="Save"/>
+		
+				
+			</form>
+			<!--Add activity edit info here-->
+		</div> 
+		
+		
+	</div>
+</div>

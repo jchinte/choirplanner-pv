@@ -1,0 +1,11 @@
+Django==1.8.4
+django-html5-boilerplate==1.0.8
+django-html5-mobile-boilerplate==1.0.5
+django-mobile==0.7.0
+django-model-utils==3.0.0
+django-registration==2.2
+django-storages==1.6.5
+MySQL-python==1.2.5
+py4j==0.10.6
+pytz==2017.2
+wadofstuff-django-serializers==1.1.0

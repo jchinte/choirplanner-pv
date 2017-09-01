@@ -1,0 +1,263 @@
+<div id="selectDialog" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <span class="close">&times;</span>
+      <span><h2>Choose your files...</h2></span>
+      <span><button class="clearBtn">clear</button>
+        <button class="selectAllBtn">get everything</button>
+      </span>
+    </div>
+    <div class="modal-body">
+    </div>
+    <div class="modal-footer">
+      <h3>Ready? tap this to continue.</h3>
+    </div>
+  </div>
+</div>
+<div class="loader" hidden>Loading...</div>
+<script src="{{ STATIC_URL }}/js/jquery.binarytransport.js"></script>
+<script>
+var isDragging = false;
+var dialogBody = $(".modal-body");
+var dialog = $("#selectDialog");
+var openSelectBtns= $(".openSelectPDFsDialog");
+var closeBtn = $(".close");
+var mouseX = 0;
+var mouseY = 0;
+var t;
+var maxScroll = 0;
+var mouseDown = false;
+var velocity;
+var timer;
+var pdfurl;
+var dataurl;
+var filetypeDictionary
+
+dialogBody.mousedown(function(ev){
+  ev.preventDefault();
+  maxScroll = dialogBody[0].scrollWidth - dialogBody.innerWidth();
+  velocity = 0;
+  isDragging = false;
+  mouseX = ev.pageX;
+  mouseY = ev.pageY;
+  t = new Date();
+  mouseDown = true;
+});
+
+function scrollInBounds(scrollVal){
+  if (scrollVal > maxScroll) scrollVal = maxScroll;
+  if (scrollVal < 0) scrollVal = 0;
+  return scrollVal;
+}
+
+function carryMomentum(){
+  clearTimeout(timer);
+  if (mouseDown) return;
+  var scrollVal = dialogBody.scrollLeft();
+  scrollVal = scrollInBounds(scrollVal + 10*velocity);
+  dialogBody.scrollLeft(scrollVal);
+  velocity = 0.9*velocity;
+  if (scrollVal> 0 && scrollVal < maxScroll&& Math.abs(velocity) > 0.01){
+    timer = setTimeout(carryMomentum, 10);
+  }
+}
+
+function activate(element){
+  if (element instanceof Array){
+    $.each(element, function(index, o){
+      activate(o);
+    });
+  }
+  else {
+    jqObject = $(element);
+    jqObject.closest(".thumb").addClass("thumbActive");
+    jqObject.closest(".thumb").removeClass("thumbInactive");
+  }
+}
+function deactivate(element){
+  if (element instanceof Array){
+    $.each(element, function(index, o){
+      deactivate(o);
+    });
+  }
+  else {
+    jqObject = $(element);
+    jqObject.closest(".thumb").removeClass("thumbActive");
+    jqObject.closest(".thumb").addClass("thumbInactive");
+  }
+}
+function toggle(element){
+  if (element instanceof Array){
+    $.each(element, function(index, o){
+      toggle(o);
+    });
+  }
+  else {
+    jqObject = $(element);
+    jqObject.closest(".thumb").toggleClass("thumbActive");
+    jqObject.closest(".thumb").toggleClass("thumbInactive");
+  }
+}
+
+function activateIfExists(items){
+  if (items instanceof Array){
+    $.each(items, function(index, o){
+      activateIfExists(o);
+    });
+  }
+  else if (filetypeDictionary[items])
+    activate(filetypeDictionary[items]);
+}
+$(document).mousemove(function(ev){
+  ev.preventDefault();
+  if (mouseDown){
+    var t2 = new Date();
+    var x2 = ev.pageX;
+    var dx = x2 - mouseX;
+    var scrollVal = dialogBody.scrollLeft();
+    scrollVal = scrollVal - dx;
+    if (scrollVal > maxScroll) scrollVal = maxScroll;
+    if (scrollVal < 0) scrollVal = 0;
+    dialogBody.scrollLeft(scrollVal);
+    velocity = -dx / (t2.getTime() - t.getTime());
+    mouseX = x2;
+    t = t2;
+    isDragging = true;
+  }
+});
+$(document).mouseup(function(ev){
+  ev.preventDefault();
+  if (mouseDown){
+    var t2 = new Date();
+    var x2 = ev.pageX;
+    var dx = x2 - mouseX;
+    if (velocity != 0){
+      timer = setTimeout(carryMomentum, 0);
+    }
+
+    var wasDragging = isDragging;
+  }
+  mouseDown = false;
+});
+
+openSelectBtns.click(function(){
+  $(".loader").show();
+  $("#template_choice_form").addClass("ui-state-disabled");
+  var url = $(this).attr("dataurl");
+  pdfurl = $(this).attr("eventurl");
+  var pdfFilename = $(this).attr("filename");
+  dialogBody.empty();
+  filetypeDictionary = {};
+  $.get(url, function(data){
+    console.log(data);
+    if (data.redirect) {
+      window.location.href = data.redirect;
+      return;
+    }
+    data = JSON.parse(data);
+    var numImages = 0;
+    $.each (data, function(index, song){
+      $.each(song['files'], function(index, file){
+        if (typeof(file.thumbnail)==="undefined"){
+            console.log("no thumb");
+        }else{
+          newItem = $('<div/>', {
+            class:"thumb thumbInactive"
+          }).attr("songid", file.id);
+
+          $('<img/>',{
+            src: file.thumbnail,
+            class: "thumb-image"
+          }).on('load', function(){
+            numImages--;
+            if (numImages==0)
+              $(".loader").hide();
+              dialog.show();
+          }).on('error', function(){
+            numImages--;
+            if (numImages==0)
+            $(".loader").hide();
+              dialog.show();
+          }).click(function(event){
+            event.preventDefault();
+          }).appendTo(newItem);
+          numImages++;
+          newItem.append("<div class='thumblabel'><p>"+song.title+": "
+             +file.types.join(', ')+"</p></div>");
+          newItem.appendTo(dialogBody);
+          newItem.click(function(event){
+              event.preventDefault();
+              if (!isDragging){
+                toggle(event.target);
+              }
+          });
+
+          $.each(file.types, function(index, filetype){
+            if (!filetypeDictionary[filetype] || !(filetypeDictionary[filetype] instanceof Array)){
+              filetypeDictionary[filetype] = [];
+            }
+            filetypeDictionary[filetype].push(newItem);
+          });
+          activateIfExists(['guitar', 'vocal', 'satb', 'harmony', 'octavo']);
+          /*if (filetypeDictionary['vocal'])
+            activate(filetypeDictionary['vocal']);
+          if (filetypeDictionary['satb'])
+            activate(filetypeDictionary['satb']);
+          if (filetypeDictionary['harmony'])
+            activate(filetypeDictionary['harmony']);*/
+        }
+      });
+    });
+    $(".modal-footer").click(function(event){
+      var files = $('.thumbActive');
+      var ids = []
+      $.each(files, function(index, file){
+        ids.push($(file).attr("songid"));
+      });
+      dialog.hide();
+      $(".loader").show();
+      $.ajax({
+        url: pdfurl+'?'+$.param({fid:ids}),
+        type: "GET",
+        dataType: 'binary',
+        success: function(result) {
+          var url = URL.createObjectURL(result);
+          console.log("url: "+url);
+          var $a = $('<a />', {
+            'href': url,
+            'download': pdfFilename,
+            'text': "click",
+            'data-ajax': "false"
+          }).hide().appendTo("body")[0].click();
+          $('.loader').hide();
+          $("#template_choice_form").removeClass("ui-state-disabled");
+          setTimeout(function() {
+            URL.revokeObjectURL(url);
+          }, 10000);
+        }
+      });
+      //window.location.href=pdfurl+'?'+$.param({fid:ids});
+    });
+    /*ata.forEach(function(song){
+
+    });*/
+  });
+
+  //dialog.show();
+  maxScroll = dialogBody[0].scrollWidth - dialogBody.innerWidth();
+
+});
+closeBtn.click(function(){
+  $("#template_choice_form").removeClass("ui-state-disabled");
+  dialog.hide();
+});
+$('.clearBtn').click(function(){
+  deactivate($('.thumbActive'))
+});
+$('.selectAllBtn').click(function(){
+  activate($('.thumbInactive'))
+});
+$(document).ready(function(){
+
+});
+</script>

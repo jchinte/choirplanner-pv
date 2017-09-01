@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block main %}
+<p>
+<h1>{{ event.title }}</h1>
+<h2>{{ event.date }}</h2>
+<table id="detail">
+	<thead>
+        <tr>
+	        <th />
+		<th> Title </th>
+		<th> Composer(s) </th>
+		<th> Notes </th>
+	</tr>
+	</thead>
+	<tbody>
+	
+{% for s in event.segment_set.all|dictsort:"order" %}
+	{% if s.visible %}
+	<tr>
+		<th>
+			{{ s.title }}
+		</th>
+		<td data-th="Title">
+			{% if s.songsegment %}
+				{% if s.songsegment.song %}
+			
+					<br/><a href="{{ s.songsegment.song.get_absolute_url }}">
+						{{ s.songsegment.song.title }}
+					</a>
+			<div data-role="collapsible" class="noPrint">
+			  <h4>Documents</h4>
+					{% if s.songsegment.song.files %}
+	<ul>
+    {% for file in s.songsegment.song.files %}
+        <li>
+        {% if flavour == "mobile" %}
+        <a href="{{ file.file.url }}" class="ui-btn ui-btn-inline" data-ajax="false">download</a> 
+        {% else %}
+        <a href="{{ file.file.url }}" class="ui-btn ui-btn-inline" data-ajax="false"><button>download</button></a> 
+        {% endif %}
+        {% if file.types %}
+		{{ file.types|join:", " }}
+
+        {% else %}
+        {{ file.file.name }}
+        {% endif %}
+        {% for type in file.filetypes.all %}
+        	{% if type.type == "mp3" %}
+        		<audio src="{{ file.file.url|safe }}" controls>
+        			
+        			Your browser does not support the audio element.
+        		</audio>
+        	{% endif %}
+        {% endfor %}
+
+        {% if delete %}
+        <a href="{% url 'songfile_delete_view' s.songsegment.song.pk file.pk %}">delete file</a>
+        {% endif %}
+        </li>
+    {% endfor %}
+    </ul>
+    
+{% else %}
+<p> no files available. </p>
+{% endif %}
+{% if flavour == "mobile" %}
+<a href="{{ s.songsegment.song.get_absolute_url }}">
+						youtube
+</a>
+{% endif %}
+</div>					
+				{% endif %}
+{% endif %}
+
+		</td>
+		<td data-th="Composer(s)">
+		        {% if s.songsegment %}
+                                {% if s.songsegment.song %}
+					{% for composer in s.songsegment.song.composers.all %}
+					        <br />
+						{{ composer.first_name }} {{ composer.last_name }}
+					{% endfor %}
+			        {% endif %}
+			{% endif %}
+		</td>
+		{% if s.notes %}
+		<td data-th="Notes">{{ s.notes }}</td>
+		{% else %}
+		<td></td>
+		{% endif %}
+		{% if s.activity_set.all %}
+		<td>
+		<table>
+		{% for a in s.activity_set.all %}
+			<tr>
+				<td>{{ a.role.name }}</td>
+				<td><a href="mailto:{{ a.participant.email }}">{{ a.participant.name }}</a></td>
+			</tr>
+		{% endfor %}
+		</table>
+		</td> 
+		{% endif %}
+	</tr>
+	{% endif %}
+{% endfor %}
+	</tbody>
+</table>
+</p>
+<a  class = "noPrint" href="{% url 'event_powerpoint_view2' event.id event.get_pptx_name %}" download>Generate Powerpoint</a>
+{% if flavour == "mobile" %}
+<script>
+
+
+
+
+//select header and append anchor
+function f(event){
+	
+	var controlDiv;
+	var icons = [];
+	icons.push({
+		icon:"ui-icon-delete",
+		href:"#",
+		others:{
+					"data-rel":"back",
+					"data-inline":"true",
+					style:"padding:0",		
+		       }
+		
+	});
+	{% if perms.Event_Planner.add_event %}
+	icons.push({
+		icon:"ui-icon-plus",
+		href:"{% url 'template_event_create_view'%}?template={{ event.id }}"
+	});
+	icons.push({
+		icon:"ui-icon-edit",
+                href:"{% url 'event_update_view' event.id %}",
+                others:{
+                   "data-ajax":"false"
+                }
+	});
+	{% endif %}
+	
+	icons.push({
+		icon:"ui-icon-home", 
+		href:"{% url 'event_list_view' %}"
+	});
+
+	controlDiv = setupIcons("event-detail-icon", icons);
+}
+$(document).one("pagebeforeshow", f);
+
+
+</script>
+{% endif %}
+
+
+
+{% if flavour != "mobile" %}
+<div class="noPrint">
+	{% if perms.Event_Planner.add_event %}
+	    <p><a href="{% url 'template_event_create_view'%}?template={{ event.id }}">Copy to new event</a></p>
+		<a href="{% url 'event_update_view' event.id %}">edit</a> &nbsp;
+	{% endif %}
+	<a href="{% url 'event_list_view' %}">go home</a>
+	<div id="id_debug" />
+	</div>
+{% endif %}
+{% endblock %}

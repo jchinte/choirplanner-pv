@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+{% block extra_js %}
+<script type="text/javascript" src="{{ STATIC_URL }}jquery.form.js"></script>
+<script type="text/javascript">
+
+
+var last, diff
+
+function showResponse(responseObject, statusText, xhr, $form) {
+	//alert(responseObject);
+	/* //$('#id_song_list').html("").append("<table>");
+	alert(responseObject.edit_perm);
+	var newhtml="<table>";
+	var song_list = JSON.parse(responseObject.songs_json);
+	$.each(song_list, function(index, song) {
+		newhtml+="<tr><th>"
+				+"<a href=\"" + song.extras.get_absolute_url + "\">"
+				+song.fields.title+"</a></th>"
+				+"<td>";
+		$.each(song.fields.composers, function(j, composer) {
+			if (j>0) newhtml+="<br/>";
+			newhtml+=composer.extras.__unicode__;
+		});
+		newhtml+="</td>";
+		if (responseObject.edit_perm)
+			newhtml+="<td> <a href=\"" + song.extras.get_update_url + "\">edit song</a></td>";
+		if (responseObject.delete_perm)		
+			newhtml+="<td> <a href=\"" + song.extras.get_delete_url + "\">delete song</a></td>";
+		newhtml+="</tr>";
+	});
+	newhtml+="</table>";
+	newhtml+="<div class=\"pagination\">"
+		+"<span class=\"step-links\">";
+	page = responseObject.page;
+
+	if (page.has_previous) {
+		newhtml+="<a id=\"id_prev\" href=\"?page_size="
+				 +page.page_size
+ 				 +"&page="
+				 +page.previous_page_number;
+		if (responseObject.search)
+			newhtml+="&search="
+				 +responseObject.search;
+		if (responseObject.option)
+			newhtml+="&options="
+				 +responseObject.option;
+		newhtml+="\">previous</a>";
+	}
+	newhtml+="<span class=\"current\">"
+			+"Page "
+			+ page.number 
+			+" of "
+			+ page.num_pages
+			+".</span>";
+	if (page.has_next) {
+		newhtml+="<a id=\"id_next\" href=\"?page_size="
+				 +page.page_size
+				 +"page="
+				 +page.next_page_number;
+		if(responseObject.search)
+				 newhtml+="&search="
+				 +responseObject.search;
+		if (responseObject.option)
+			newhtml+="&options="
+				 +responseObject.option;
+		newhtml+="\">next</a>";
+	}
+	$('#id_song_list').html(newhtml);*/
+	
+	$( '#id_song_list' ).html(responseObject.songs);
+	//$( "[data-role='page']" ).trigger("create");
+	 
+}
+var timeoutID;
+function autosubmit(eventObject) {
+	var TIMEOUT = 790;
+
+	if ( last ) {
+		diff = eventObject.timeStamp - last;
+	} else {
+		diff = TIMEOUT;
+	}
+	if (diff >= TIMEOUT) {
+		last = eventObject.timeStamp;	
+		doSubmit();
+		if (timeoutID){
+			window.clearTimeout(timeoutID);
+		}
+		timeoutID = null;
+	}
+	else {
+		if (!timeoutID){
+			timeoutID = window.setTimeout(doSubmit, TIMEOUT-diff);
+		}
+	}
+		
+}
+
+
+function doSubmit(){
+	var options = {
+//	    target: '#id_song_list',
+	    success: showResponse,
+	    url: '{% url 'song_list_view' %}?xhr',
+	    dataType: 'json'
+	}
+	$( '#search_form' ).ajaxSubmit(options);
+		
+}
+var f = function() {
+	var options = {
+	    target: '#id_song_list',
+	    success: showResponse,
+	    url: '{% url 'song_list_view' %}?xhr',
+	    dataType: 'json'
+	}
+	
+	$( '#search_form' ).ajaxForm(options);
+	
+	$( '#id_search' ).keyup(autosubmit);
+	$( '#id_options' ).change(autosubmit);
+};
+$( document ).ready(f );
+{% if flavour == "mobile" %}
+$('div').pagecontainer({
+	load:function(event, ui){
+  		f;
+  	}
+});
+{% endif %}
+/*
+var f3 = function() {
+	$(document).off("pageshow", ".paginated", f3);
+	alert("setup2");
+	$(".paginated").removeAttr('data-next');
+	$(".paginated").removeAttr('data-prev');
+	$(".paginated").attr('data-next', $(".paginated").find(".pagination").jqmData("next"));
+	$(".paginated").attr('data-prev', $(".pagination").jqmData("prev"));
+
+	var next = $(this).jqmData("next"),
+		prev = $(this).jqmData("prev");
+	if (next) {
+		//$(":mobile-pagecontainer").pagecontainer("load", next);
+	}
+};
+
+$(document).one("pageshow", ".paginated", f3);
+
+
+function f2() {
+
+	function navnext(next){
+		decouple();
+		$(":mobile-pagecontainer").pagecontainer("change", next, {
+			transition: "slide"
+		});
+	}
+	function navprev(prev){
+		decouple();
+		$(":mobile-pagecontainer").pagecontainer("change", prev, {
+			transition: "slide",
+			reverse:true
+		});
+	}
+	function donext(event){
+		var next = $(".paginated").jqmData("next");
+		alert("FIRED: nav to " + next);
+		if (next && (event.target === $(this)[0])){
+			alert("nav to " + next);	
+			navnext(next);
+		}
+	}
+	function doprev(event){
+		var prev = $(".paginated").jqmData("prev");
+		if (prev && (event.target === $(this)[0])){
+			navprev(prev);
+		}
+		
+	}	
+	function decouple(){
+		$(document).off("swipeleft", ".paginated", donext);
+		$(document).off("swiperight", ".paginated", doprev);
+		$(document).off("pagecreate", ".paginated", f2);
+	}
+	decouple();
+	alert("setup1");
+	$(document).one("swipeleft", ".paginated", donext);
+	$(document).one("swiperight", ".paginated", doprev);	
+	
+};
+
+$( document ).one("pagecreate", ".paginated", f2);
+*/
+
+$(document).one("pageshow", function(){
+	setupIcons("song-list-icon", [{
+									icon:"ui-icon-delete",
+									href:"#",
+									others:{
+										"data-rel":"back"
+									},
+								},
+								]);
+});
+
+</script>
+
+{% endblock %}
+{% block main %}
+{% if flavour == "mobile" %}
+<!-- popup anchor -->
+<a href="#popupSearch" 
+	class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-icon-search  ui-btn-a"
+   >Search</a>
+<!-- create pop-up div for mobile -->
+<div data-role="panel" id="popupSearch" data-theme="a"  data-position="right" data-position-fixed="true" data-display="overlay" class="ui-corner-all ui-content">
+<!--a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right">Close</a-->
+{% endif %}
+<form id="search_form" method="get" action="{% url 'song_list_view' %}">
+{{ search_form }}
+<input id="search_submit" type="submit" value="Search"/>
+</form>
+{% if flavour == "mobile" %}
+</div>
+{% endif %}
+<div id="id_song_list">
+{% block songlist %}
+{% include "SongManager/songs.html" %}
+{% endblock %}
+</div>
+<a href="{% url 'song_create_view' %}">Add New Song</a>
+{% endblock %}
