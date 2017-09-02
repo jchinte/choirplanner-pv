@@ -891,8 +891,8 @@ def RawPDFView(request, event_id):
     if request.method=='GET':
         fs = [os.path.join(settings.MEDIA_ROOT, SongFile.objects.get(pk=i).file.name) for i in request.GET.getlist('fid[]')] if 'fid[]' in request.GET \
          else getSongs(event_id)
-        print([os.path.join(settings.MEDIA_ROOT,"pdftk/usr/tk/pdftk")] + fs + "cat output -".split())
-        combinedFile = check_output([os.path.join(settings.MEDIA_ROOT,"pdftk/usr/bin/pdftk")] + fs + "cat output -".split())
+        print("qpdf --empty --decrypt --pages".split() + fs + "-- -".split())
+        combinedFile = check_output("/home/jchinte/bin/qpdf --empty --decrypt --pages".split() + fs + "-- -".split())
         response = HttpResponse(str(combinedFile), content_type='application/pdf')
         filename = Event.objects.get(id=event_id).title + '.pdf'
         response['Content-Disposition'] = 'attachment; filename="' + filename + '"'

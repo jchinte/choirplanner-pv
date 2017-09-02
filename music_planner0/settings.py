@@ -103,14 +103,14 @@ elif os.getenv('SERVER_SOFTWARE','').startswith('Google App Engine'):
             'PASSWORD': 'choirplanner'
         }
     }
-    STATIC_URL = '/static/'
-    MEDIA_URL = '/media/'
+    STATIC_URL = '/static/static/'
+    MEDIA_URL = '/static/media/'
     STATICFILES_DIRS = (
         os.path.join(BASE_DIR, 'static'),
         )
-    STATIC_ROOT= os.path.join(BASE_DIR, 'collect')
+    STATIC_ROOT= os.path.join(BASE_DIR, '../choirplanner_static/static')
     #MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-    MEDIA_ROOT = os.path.join(STATIC_ROOT, 'media')
+    MEDIA_ROOT = os.path.join(STATIC_ROOT, '../media')
     
     tdir = [os.path.join(BASE_DIR, 'templates'),]
     DEBUG = True
@@ -130,14 +130,15 @@ else:
             'HOST': '127.0.0.1',
             }
         }
-    STATIC_URL = '/static/'
-    MEDIA_URL = '/media/'
+    STATIC_URL = '/static/static/'
+    MEDIA_URL = '/static/media/'
     STATICFILES_DIRS = (
         os.path.join(BASE_DIR, 'static'),
         )
-    STATIC_ROOT= os.path.join(BASE_DIR, 'collect')
-    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+    STATIC_ROOT= os.path.join(BASE_DIR, '../../praisingvoices_static/static')
+    MEDIA_ROOT = os.path.join(BASE_DIR, '../../praisingvoices_static/media')
     #MEDIA_ROOT = os.path.join(STATIC_ROOT, 'media')
+    STATIC_ROOT = '/home/jchinte/webapps/praisingvoices_static/static'
     
     tdir = [os.path.join(BASE_DIR, 'templates'),]
     DEBUG = True
@@ -145,6 +146,10 @@ else:
     print "STATIC_ROOT = " + STATIC_ROOT
     SITE_ID=2
     JAVA_GATEWAY_ADDRESS = '127.0.0.1'
+
+print "MEDIA_ROOT="+MEDIA_ROOT
+print "STATIC_ROOT="+STATIC_ROOT
+
 JAVA_DIR = os.path.join(BASE_DIR,  'lib')
 # Internationalization
 # https://docs.djangoproject.com/en/1.6/topics/i18n/
