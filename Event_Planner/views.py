@@ -286,7 +286,8 @@ def EventPowerpointView2(request, pk, filename):
     #print songs
     
     #get powerpoints related to songs
-    #blankFilename = os.path.join(settings.BASE_DIR, "media/black.pptx")
+    #blankFilename = os.path.join(settings.MEDIA_ROOT, "black.pptx")
+    blankFilename = "../black.pptx"
     pptFilenames = []
     #pptFilenames.append(blankFilename)
     for s in songs:
@@ -298,26 +299,38 @@ def EventPowerpointView2(request, pk, filename):
                 print f.file.name
                 
                 print os.path.join(settings.MEDIA_ROOT, f.file.name)
-                newPath = os.path.join(settings.MEDIA_ROOT, f.file.name)
+                #newPath = os.path.join(settings.MEDIA_ROOT, f.file.name)
+                newPath = f.file.name
                 _,file_extension = os.path.splitext(newPath)
                 print file_extension
                 if file_extension=='.pptx':
-                    pptFilenames.append(os.path.join(settings.MEDIA_ROOT, f.file.name))
-                    #pptFilenames.append(blankFilename)
+                    #pptFilenames.append(os.path.join(settings.MEDIA_ROOT, f.file.name))
+                    pptFilenames.append(os.path.basename(f.file.name))
+                    pptFilenames.append(blankFilename)
 
                 
     print pptFilenames
     if len(pptFilenames)==0:
         return HttpResponse("")
     else:
-        gateway = JavaGateway(gateway_parameters=GatewayParameters(address=settings.JAVA_GATEWAY_ADDRESS))
+        #gateway = JavaGateway(gateway_parameters=GatewayParameters(address=settings.JAVA_GATEWAY_ADDRESS))
         #print gateway.help()
-        javaFilenames = gateway.new_array(gateway.jvm.java.lang.String, len(pptFilenames))
-        for i in range(len(pptFilenames)):
-            javaFilenames[i] = pptFilenames[i]
-            print pptFilenames[i] + "!!"
-        newFile = gateway.entry_point.mergePPTsToFile(javaFilenames)
-        print "newfile created"
+        #javaFilenames = gateway.new_array(gateway.jvm.java.lang.String, len(pptFilenames))
+        #for i in range(len(pptFilenames)):
+        #    javaFilenames[i] = pptFilenames[i]
+        #    print pptFilenames[i] + "!!"
+        #newFile = gateway.entry_point.mergePPTsToFile(javaFilenames)
+        print "starting pptx" 
+        command =  ['/home/jchinte/bin/newpptMerge', os.path.join(settings.MEDIA_ROOT, 'songs/')] + pptFilenames
+        print command
+        output = check_output(command)
+        print output
+        ols = output.splitlines()
+        newFile = "/home/jchinte/tmp/MergedPresentation.pptx"
+        for l in ols:
+            if l.startswith("target:"):
+                newFile = l.split()[1]
+        print "newfile " + newFile + " created"
         response = FileResponse(open(newFile, "rb"))
         #response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.presentationml.presentation')
         if (filename==None or filename == "" ):

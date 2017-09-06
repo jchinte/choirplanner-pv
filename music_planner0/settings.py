@@ -141,7 +141,7 @@ else:
     STATIC_ROOT = '/home/jchinte/webapps/praisingvoices_static/static'
     
     tdir = [os.path.join(BASE_DIR, 'templates'),]
-    DEBUG = True
+    DEBUG = False
     td = True
     print "STATIC_ROOT = " + STATIC_ROOT
     SITE_ID=2
