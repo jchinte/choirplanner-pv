@@ -104,3 +104,7 @@ ENV/
 *~
 media/
 static/
+Event_Planner/#views.py#
+Event_Planner/.vs/ProjectSettings.json
+Event_Planner/.vs/slnx.sqlite
+templates/SongManager/files.html.bak

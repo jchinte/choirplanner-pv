@@ -14,7 +14,7 @@ from django.forms.models import modelformset_factory, modelform_factory,\
     ModelForm
 from django.forms import HiddenInput
 from django.utils.encoding import smart_unicode
-from SongManager.views import JSONResponseMixin 
+from SongManager.views import JSONResponseMixin
 from django.views.generic.detail import SingleObjectTemplateResponseMixin
 from django.views.generic.edit import BaseUpdateView, BaseCreateView,\
     BaseDeleteView
@@ -64,19 +64,19 @@ class TemplateListView(BaseEventListView):
                         })
     def get_queryset(self):
         return Event.objects.filter(is_template=True)
-    
+
     @method_decorator(permission_required('can_create_template'))
     def dispatch(self, *args, **kwargs):
-        
+
         return super(TemplateListView, self).dispatch(*args, **kwargs)
-    
-    
+
+
 class EventListView(BaseEventListView):
     def get_queryset(self):
         return Event.objects.filter(is_template=False).exclude(date__lt=datetime.now() - timedelta(hours=24))
-    
+
 class EventArchiveView(BaseEventListView):
-    
+
     def get_context_data(self, **kwargs):
         context = super(EventArchiveView, self).get_context_data(**kwargs)
         context.update({
@@ -109,7 +109,7 @@ class OrderUpdateView(JSONResponseMixin, BaseUpdateView):
     #                print item, value
     #                for v in value:
     #                    print v
-    
+
         qs = Segment.objects.filter(event=self.object.pk)
         i=1;
         for s in data['array']:
@@ -140,22 +140,22 @@ class EventUpdateView(JSONResponseMixin, SingleObjectTemplateResponseMixin, Base
 
     def __init__(self, *args, **kwargs):
         super(EventUpdateView,self).__init__(*args, **kwargs)
-        
+
     @method_decorator(permission_required('Event_Planner.change_event'))
     def dispatch(self, *args, **kwargs):
-        
+
         return super(EventUpdateView, self).dispatch(*args, **kwargs)
-    
+
     def get_context_data(self, **kwargs):
         context = super(EventUpdateView, self).get_context_data(**kwargs)
-        
+
         form_list = []
         segment_list = list(self.segment_queryset.filter(event=self.object.pk))
         i=0
         for seg in segment_list:
             new_form_class = modelform_factory(seg.__class__, fields='__all__', widgets={'event':HiddenInput})
             new_form = new_form_class(instance=seg, prefix=(u'segment-'+smart_unicode(seg.pk)))
-            
+
             form_list.append(new_form)
 
             i = i+1
@@ -164,7 +164,7 @@ class EventUpdateView(JSONResponseMixin, SingleObjectTemplateResponseMixin, Base
         form = SearchForm()
         context.update({'search_form': form,})
         return context
-    
+
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
         if request.GET.has_key('add_seg'):
@@ -172,7 +172,7 @@ class EventUpdateView(JSONResponseMixin, SingleObjectTemplateResponseMixin, Base
         if request.GET.has_key('add_songseg'):
             return redirect('songsegment_create_view', kwargs['pk'])
         return super(EventUpdateView, self).get(request, *args, **kwargs)
-    
+
     def render_to_response(self, context):
         print django_mobile.get_flavour()
         if self.request.method=='GET':
@@ -206,7 +206,7 @@ class EventDetailView(DetailView):
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
         return super(EventDetailView, self).dispatch(*args, **kwargs)
-    
+
     def get_context_data(self, **kwargs):
         context = super(EventDetailView, self).get_context_data(**kwargs)
         segments = Segment.objects.filter(event=self.object.pk).filter(visible=True).order_by('order')
@@ -265,11 +265,11 @@ class ActivityCreateView(CreateView):
                    'segment_event': segment,
                    }
         return initial
-    
+
     def get_success_url(self):
         #print self.kwargs
         match = resolve(urlparse(self.request.path)[2])
-        
+
         return reverse('event_update_view', args=[match.kwargs['event_id']])
     def render_to_response(self, context):
         context.update({'curr_url': self.request.path})
@@ -277,14 +277,14 @@ class ActivityCreateView(CreateView):
 
 @cache_page (60*15)
 def EventPowerpointView2(request, pk, filename):
-    
-    
+
+
     #print pk
     #get all items related to event
     songs = SongSegment.objects.filter(event=pk).order_by("order")
     #TODO: segment_queryset = Segment.objects.select_subclasses().order_by('order')
     #print songs
-    
+
     #get powerpoints related to songs
     #blankFilename = os.path.join(settings.MEDIA_ROOT, "black.pptx")
     blankFilename = "../black.pptx"
@@ -297,7 +297,7 @@ def EventPowerpointView2(request, pk, filename):
             print str(s)+":"+ "all files: " + str(files)
             for f in files:
                 print f.file.name
-                
+
                 print os.path.join(settings.MEDIA_ROOT, f.file.name)
                 #newPath = os.path.join(settings.MEDIA_ROOT, f.file.name)
                 newPath = f.file.name
@@ -308,7 +308,7 @@ def EventPowerpointView2(request, pk, filename):
                     pptFilenames.append(os.path.basename(f.file.name))
                     pptFilenames.append(blankFilename)
 
-                
+
     print pptFilenames
     if len(pptFilenames)==0:
         return HttpResponse("")
@@ -320,7 +320,7 @@ def EventPowerpointView2(request, pk, filename):
         #    javaFilenames[i] = pptFilenames[i]
         #    print pptFilenames[i] + "!!"
         #newFile = gateway.entry_point.mergePPTsToFile(javaFilenames)
-        print "starting pptx" 
+        print "starting pptx"
         command =  ['/home/jchinte/bin/newpptMerge', os.path.join(settings.MEDIA_ROOT, 'songs/')] + pptFilenames
         print command
         output = check_output(command)
@@ -340,9 +340,9 @@ def EventPowerpointView2(request, pk, filename):
         response['content_type']='application/vnd.openxmlformats-officedocument.presentationml.presentation'
         response['Content_Length'] = os.path.getsize(newFile)
         #response.write(newFile)
-        
+
         return response
-@cache_page (60*15)        
+@cache_page (60*15)
 def EventPowerpointView(request, pk):
     return EventPowerpointView2(request, pk, Event.objects.get(id=pk).title + '.pptx')
 
@@ -382,7 +382,7 @@ class AjaxActivityCreateView(JSONResponseMixin, BaseCreateView):
             form.save()
             c = RequestContext(self.request, Context())
             #print c
-            
+
             c.update({'segment': form.instance.segment_event})
             #print c
             t = loader.get_template(self.activity_list_template_name)
@@ -401,9 +401,9 @@ class AjaxActivityCreateView(JSONResponseMixin, BaseCreateView):
                 #print "other error"
             #print "returning form invalid"
             return self.form_invalid(form)
-        
 
-            
+
+
 
     def render_to_response(self, context):
         #print"render"
@@ -427,17 +427,17 @@ class ActivityDeleteView(DeleteView):
         context = super(ActivityDeleteView, self).get_context_data(**kwargs)
         context.update({
                         'page_id':'ActivityDelete'+str(self.object.pk)})
-        return context    
+        return context
     @method_decorator(permission_required('Event_Planner.delete_activity'))
     def dispatch(self, *args, **kwargs):
         return super(ActivityDeleteView, self).dispatch(*args, **kwargs)
-    
+
     def get_success_url(self):
         match = resolve(urlparse(self.request.path)[2])
-        return reverse('event_update_view', args=[match.kwargs['event_id']]) 
+        return reverse('event_update_view', args=[match.kwargs['event_id']])
 #    def get_context_data(self, **kwargs):
 #        context = super(ActivityDeleteView, self).get_context_data(**kwargs)
-#        context.update({'segment': self.request.path})            
+#        context.update({'segment': self.request.path})
 class ParticipantCreateView(CreateView):
     form_class = ParticipantForm
     template_name = "Event_Planner/generic_form.html"
@@ -454,12 +454,12 @@ class ParticipantCreateView(CreateView):
         if self.request.GET.has_key('back_url'):
             context.update({'back_url': self.request.GET['back_url']})
         return super(ParticipantCreateView, self).render_to_response(context)
-    
+
     def get_success_url(self):
         if self.request.GET.has_key('back_url'):
             return self.request.GET['back_url']
         return reverse('event_list_view')
-    
+
 class RoleCreateView(CreateView):
     template_name = "Event_Planner/generic_form.html"
     model = Role
@@ -471,12 +471,12 @@ class RoleCreateView(CreateView):
     @method_decorator(permission_required('Event_Planner.add_role'))
     def dispatch(self, *args, **kwargs):
         return super(RoleCreateView, self).dispatch(*args, **kwargs)
-    
+
     def render_to_response(self, context):
         if self.request.GET.has_key('back_url'):
             context.update({'back_url': self.request.GET['back_url']})
         return super(RoleCreateView, self).render_to_response(context)
-    
+
     def get_success_url(self):
         if self.request.GET.has_key('back_url'):
             return self.request.GET['back_url']
@@ -496,7 +496,7 @@ class EventCreateView(CreateView):
         if request.user.has_perm('can_create_template'):
             self.form_class=EventCreateForm
         return super(EventCreateView, self).dispatch(request, *args, **kwargs)
-    
+
     def get_success_url(self):
         print "success url: event_update_view " + str(self.object.pk)
         return reverse('event_update_view', args=[self.object.pk])
@@ -530,7 +530,7 @@ class MassCreateView(EventCreateView):
 
 class TemplateCreateView(EventCreateView):
     form_class=EventForm
-    
+
 #    @method_decorator(permission_required('Event_Planner.can_create_template'))
 #    def dispatch(self, *args, **kwargs):
 #        return super(EventCreateView, self).dispatch(*args, **kwargs)
@@ -539,17 +539,17 @@ class TemplateCreateView(EventCreateView):
         context.update({
                         'page_id':'TemplateCreate'})
         return context
-        
+
     def post(self, request, *args, **kwargs):
         print "POST"
         print self.request
         if self.request.GET.has_key('template'):
             self.template=self.request.GET['template']
         return super(TemplateCreateView, self).post(request, *args, **kwargs)
-    
+
     def form_valid(self, form):
-        response = super(TemplateCreateView, self).form_valid(form)     
-        print "form is valid"   
+        response = super(TemplateCreateView, self).form_valid(form)
+        print "form is valid"
         print response
         if hasattr(self, 'template') and self.template is not None:
             print "has template " + str(self.template)
@@ -564,9 +564,9 @@ class TemplateCreateView(EventCreateView):
                 #print "new ID:"
                 #print segment.id
         return response
-        
-            
-    
+
+
+
 class SegmentCreateView(JSONResponseMixin, SingleObjectTemplateResponseMixin, BaseCreateView):
     model = Segment
     template_name_suffix = '_form'
@@ -579,7 +579,7 @@ class SegmentCreateView(JSONResponseMixin, SingleObjectTemplateResponseMixin, Ba
     @method_decorator(permission_required('Event_Planner.add_segment'))
     def dispatch(self, *args, **kwargs):
         return super(SegmentCreateView, self).dispatch(*args, **kwargs)
-    
+
     def get_initial(self):
         if self.request.POST.has_key('event'):
             return super(SegmentCreateView, self).get_initial()
@@ -589,7 +589,7 @@ class SegmentCreateView(JSONResponseMixin, SingleObjectTemplateResponseMixin, Ba
             pass
         url = self.request.path
         print self.request.path
-        
+
         match = resolve(urlparse(url)[2])
         print match
         event = Event.objects.get(pk=match.kwargs['event_id'])
@@ -608,7 +608,7 @@ class SegmentCreateView(JSONResponseMixin, SingleObjectTemplateResponseMixin, Ba
                    'title': title,
                    }
         return initial
-        
+
     def get_success_url(self):
 
             #print self.object.event.pk
@@ -653,24 +653,24 @@ class SongSegmentCreateView(SegmentCreateView):
         context = super(SongSegmentCreateView, self).get_context_data(**kwargs)
         context.update({
                         'page_id':'SongSegmentCreate'})
-        return context    
+        return context
     @method_decorator(permission_required('Event_Planner.add_songsegment'))
     def dispatch(self, *args, **kwargs):
         return super(SongSegmentCreateView, self).dispatch(*args, **kwargs)
-        
 
-   
+
+
 class SegmentUpdateView(UpdateView):
     queryset = Segment.objects.select_subclasses()
     def get_context_data(self, **kwargs):
         context = super(SegmentUpdateView, self).get_context_data(**kwargs)
         context.update({
                         'page_id':'SegmentUpdate'+str(self.object.pk)})
-        return context    
+        return context
     @method_decorator(permission_required('Event_Planner.change_segment'))
     def dispatch(self, *args, **kwargs):
         return super(SegmentUpdateView, self).dispatch(*args, **kwargs)
-    
+
     def get_form_kwargs(self):
         kwargs = super(SegmentUpdateView, self).get_form_kwargs()
         #print "segmentupdateview - "
@@ -678,19 +678,19 @@ class SegmentUpdateView(UpdateView):
         kwargs.update({'prefix': (u'segment-'+smart_unicode(match.kwargs['pk']))})
         #print kwargs
         return kwargs
-    
+
     def get_success_url(self):
         #print self.object.event.pk
         return reverse('event_update_view', args=[self.object.event.pk])
-    
+
 class JSONSegmentUpdateView(JSONResponseMixin, BaseUpdateView):
     queryset = Segment.objects.select_subclasses()
     def get_object(self, queryset=None):
         ### this method must be called via post.
-        ### this method should NEVER be called via get.  
+        ### this method should NEVER be called via get.
         print "get object!!!!!!!!!"
         self.object = super(JSONSegmentUpdateView, self).get_object(queryset)
-        
+
         if isinstance(self.object, SongSegment):
             print "is song segment"
             pass
@@ -713,7 +713,7 @@ class JSONSegmentUpdateView(JSONResponseMixin, BaseUpdateView):
         new_form_class = modelform_factory(self.get_object().__class__, fields='__all__')
         return new_form_class
 
-    
+
     def get_form_kwargs(self):
         kwargs = super(JSONSegmentUpdateView, self).get_form_kwargs()
         print "jsonsegmentupdateview - "
@@ -746,7 +746,7 @@ class JSONSegmentUpdateView(JSONResponseMixin, BaseUpdateView):
 #    def get_success_url(self):
 #        print self.object.event.pk
 #        return reverse('event_update_view', args=[self.object.event.pk])
-    
+
 class SongSegmentUpdateView(SegmentUpdateView):
     queryset=Segment.objects.select_subclasses()
     model = SongSegment
@@ -754,17 +754,17 @@ class SongSegmentUpdateView(SegmentUpdateView):
         context = super(SongSegmentUpdateView, self).get_context_data(**kwargs)
         context.update({
                         'page_id':'SongSegmentUpdate'+str(self.object.pk)})
-        return context    
+        return context
     def get_form_class(self):
         print "get_form_class reached!"
         new_form_class = modelform_factory(self.get_object().__class__, fields='__all__')
         return new_form_class
     def get_object(self, queryset=None):
         ### this method must be called via post.
-        ### this method should NEVER be called via get.  
+        ### this method should NEVER be called via get.
         #print "get object!!!!!!!!!"
         self.object = super(SongSegmentUpdateView, self).get_object(queryset)
-        
+
         if isinstance(self.object, SongSegment):
             pass
         elif self.object is not None:
@@ -787,16 +787,16 @@ class SegmentDeleteView(DeleteView):
         return context
     @method_decorator(permission_required('Event_Planner.delete_segment'))
     def dispatch(self, *args, **kwargs):
-        
+
         return super(SegmentDeleteView, self).dispatch(*args, **kwargs)
-    
+
     def get_success_url(self):
         match = resolve(urlparse(self.request.path)[2])
-        return reverse('event_update_view', args=[match.kwargs['event_id']]) 
-    
+        return reverse('event_update_view', args=[match.kwargs['event_id']])
+
 #################TODO: ADD PERMISSIONS DECORATORS TO JSON views
-    
-    
+
+
 class JSONSegmentDeleteView(JSONResponseMixin, BaseDeleteView):
     model = Segment
     def post(self, *args, **kargs):
@@ -806,7 +806,7 @@ class JSONSegmentDeleteView(JSONResponseMixin, BaseDeleteView):
         #super(JSONSegmentDeleteView, self).post(*args, **kargs)
         #print "after super post"
         return self.render_to_response({})
-    
+
 class JSONActivityDeleteView(JSONResponseMixin, BaseDeleteView):
     model = Activity
     def post(self, *args, **kargs):
@@ -816,8 +816,9 @@ class JSONActivityDeleteView(JSONResponseMixin, BaseDeleteView):
         #super(JSONSegmentDeleteView, self).post(*args, **kargs)
         #print "after super post"
         return self.render_to_response({})
-    
+
 # non-generic views
+
 
 @login_required
 def JSONRoleListView(request):
@@ -831,23 +832,23 @@ def JSONRoleListView(request):
     role_list = []
     for role in roles:
         role_list.append(smart_unicode(role))
-        
+
     response = HttpResponse(json.dumps(role_list,  ensure_ascii=False))
     return response
-    
-@login_required      
+
+@login_required
 def JSONParticipantListView(request):
     term = None
     if request.GET.has_key('term'):
         term = request.GET['term']
     if term:
-        participants = Participant.objects.filter(name__icontains=term) 
+        participants = Participant.objects.filter(name__icontains=term)
     else:
         participants = Participant.objects.all()
     participant_list = []
     for participant in participants:
         participant_list.append(smart_unicode(participant))
-        
+
     response = HttpResponse(json.dumps(participant_list,  ensure_ascii=False))
     return response
 @login_required
@@ -866,7 +867,7 @@ def JSONPDFView(request, event_id):
                 print str(s)+":"+ "all files: " + str(files)
                 for f in files:
                     print f.file.name
-                    
+
                     print os.path.join(settings.MEDIA_ROOT, f.file.name)
                     newPath = os.path.join(settings.MEDIA_ROOT, f.file.name)
                     file_root,file_extension = os.path.splitext(newPath)
@@ -899,6 +900,24 @@ def getSongs(event_id):
                     fs.append(os.path.join(settings.MEDIA_ROOT, f.file.name))
     return fs
 
+def RESTEventView(request):
+    def get(request):
+        pass
+    def post(request):
+        return HTTPResponse(status=405)
+    def put(request):
+        return HTTPResponse(status=405)
+    def delete(request):
+        return HTTPResponse(status=405)
+    methods = {
+        'GET': get,
+        'POST': post,
+        'PUT': put,
+        'DELETE': delete
+    }
+    #dispatch
+    return methods[request.method](request)
+
 @login_required
 def RawPDFView(request, event_id):
     if request.method=='GET':
@@ -913,4 +932,3 @@ def RawPDFView(request, event_id):
         response['Content_Length'] = len(combinedFile)
         return response
         #return HttpResponse(json.dumps(pdfSongs, ensure_ascii=False))
-        

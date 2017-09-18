@@ -1,5 +1,8 @@
 {% extends "base.html" %}
 {% block main %}
+<!--script src="{{ STATIC_URL }}js/dropzone.js"> </script-->
+<script src="{{ STATIC_URL }}jquery.form.js"></script>
+<link rel="stylesheet" href="{{ STATIC_URL }}css/dropzone.css" />
 <p>
 <h1>{{ event.title }}</h1>
 <h2>{{ event.date }}</h2>
@@ -27,23 +30,38 @@
 					<br/><a href="{{ s.songsegment.song.get_absolute_url }}">
 						{{ s.songsegment.song.title }}
 					</a>
-			<div data-role="collapsible" class="noPrint">
-			  <h4>Documents</h4>
+			<div data-role="collapsible" class="noPrint fallback"> 
+			  <h4>Documents 
+</h4>	{% if perms.Event_Planner.add_event %}
+<input type="checkbox" class="togglebox" id="edit{{ s.songsegment.id }}" data-role="none" /><label class="segEditIconLabel" for="edit{{ s.songsegment.id }}" id="editicon{{ s.songsegment.id }}" class="segEditLabel" data-role="none"><span><img class="segEditIcon" src="{{ STATIC_URL }}img/pencil2.png" /></span></label>{% endif %}
+
 					{% if s.songsegment.song.files %}
 	<ul>
     {% for file in s.songsegment.song.files %}
         <li>
+	  <span class="clearfix">
         {% if flavour == "mobile" %}
-        <a href="{{ file.file.url }}" class="ui-btn ui-btn-inline" data-ajax="false">download</a> 
+        <a href="{{ file.file.url }}" class="noPrint ui-btn ui-btn-inline" data-ajax="false">download</a> 
         {% else %}
-        <a href="{{ file.file.url }}" class="ui-btn ui-btn-inline" data-ajax="false"><button>download</button></a> 
+        <a href="{{ file.file.url }}" class="noPrint mouseover-thumbnail-holder ui-btn ui-btn-inline" data-ajax="false"><button>download</button>
+	{% if file.thumbnail %}
+	<img width="240" height="auto" class="noPrint large-thumbnail-style" src="{{ file.thumbnail }}" />
+	{% endif %}
+	</a> 
         {% endif %}
+	<span class="itemLabel" id="span{{ file.id }}">
         {% if file.types %}
-		{{ file.types|join:", " }}
-
+	{% for type in file.types %}
+	  <span class="filetag">{{ type }}{% if perms.Event_Planner.add_event %}<span class="deletetagbutton" deletefrom="{% url 'rest_songfile_filetype_view' file.id  type %}"> &times;</span>{% endif %}</span>
+{% endfor %}
+<!--		{{ file.types|join:", " }}
+-->
         {% else %}
-        {{ file.file.name }}
         {% endif %}
+        {% if perms.Event_Planner.add_event %}
+          <span class="addtagbutton" addto="{% url 'rest_songfile_view' file.id %}">&plus;</span>
+{% endif %}
+	</span><!-- class="itemlabel"  -->
         {% for type in file.filetypes.all %}
         	{% if type.type == "mp3" %}
         		<audio src="{{ file.file.url|safe }}" controls>
@@ -56,8 +74,16 @@
         {% if delete %}
         <a href="{% url 'songfile_delete_view' s.songsegment.song.pk file.pk %}">delete file</a>
         {% endif %}
+	</span>
         </li>
     {% endfor %}
+	{% if perms.Event_Planner.add_event %}
+<li class="newfileform">
+     <form id="form{{ s.songsegment.song.id }}" enctype="multipart/form-data" method="post" action="{% url 'song_upload_view' s.songsegment.song.id %}"> 
+{% csrf_token %} <input class="ev_fileinput" name="file" type="file" /><input name="song" value="{{ s.songsegment.song.id }}" type="hidden" hidden>
+<input maxlength="100" name="filetype_list" type="text" hidden /><input id="submit{{ s.songsegment.song.id }}" type="submit" value="Upload" hidden />
+</form></li>
+{% endif %}
     </ul>
     
 {% else %}
@@ -167,4 +193,129 @@ $(document).one("pagebeforeshow", f);
 	<div id="id_debug" />
 	</div>
 {% endif %}
+<script>
+{% include 'csrf.js' %}
+function remove(){
+  var deleteurl = this.getAttribute("deletefrom");
+  var currentTag = this.parentNode
+  $.ajax({
+    
+    url: deleteurl,
+    type: 'DELETE',
+    success: function(){
+        currentTag.remove();
+    },
+    error: function(head, stat, err){
+       //$("#id_debug").text(head.responseText);
+       //alert(head.responseText);
+       //alert(stat);
+       //alert(err);
+    }
+  });
+}
+
+function createTag(type, addurl){
+   tag = document.createElement("span");
+   tag.setAttribute("class", "filetag");
+   tag.innerText = type;
+   deletebutton = document.createElement("span");
+   deletebutton.setAttribute("class", "deletetagbutton");
+   deletebutton.setAttribute("deletefrom", addurl+"/"+type);
+   deletebutton.innerHTML="&times;";
+   deletebutton.onclick = remove;
+   tag.appendChild(deletebutton);
+   return tag;
+}
+
+$(".addtagbutton").click(function(){
+    //alert("add to " + this.getAttribute("addto"));
+    var currentTag = this;
+    var parent = this.parentNode;
+    var addurl = this.getAttribute("addto");
+    $.ajax({
+        url: '{% url 'json_filetypelist_view' %}',
+        type: 'GET',
+        success: function(data, status, xhr){
+          //alert(data);
+          var types=JSON.parse(data);
+          var select = document.createElement("select");
+          var opt = document.createElement("option");
+          select.appendChild(opt);
+          opt.innerText = "select file type...";
+          types.forEach(function(type){
+             var opt = document.createElement("option");
+             opt.innerText = type;
+             opt.setAttribute("value", type);
+             select.appendChild(opt);
+//             alert(opt.outerHTML);
+          });
+          parent.insertBefore(select, currentTag);
+          select.onchange = function(ev) {
+             if (event.target.value){
+                var type = event.target.value;
+                $.ajax({
+                   url : addurl+"/"+type,
+                   type: "POST",
+                   success: function(data, status, xhr){
+                     //alert(xhr.status);
+                     if (xhr.status==201){
+                      tag = createTag(type, addurl);
+                      parent.insertBefore(tag, currentTag);
+                     }
+                     select.remove();
+                     
+                   },
+                   error: function(head, stat, err){
+                    //$("#id_debug").text(head.responseText);
+                    //alert(head.responseText);
+                     //alert(stat);
+                     //alert(err);
+                   }
+
+                   
+                });
+             }
+          };
+       },
+        error: function(){
+        }
+    });
+
+
+});
+$(".deletetagbutton").click(remove);
+$(".ev_fileinput").change(function(ev){
+//   alert("change");
+    var fullPath = this.value;
+    if (fullPath) {
+        var startIndex = (fullPath.indexOf('\\') >= 0 ? fullPath.lastIndexOf('\\') : fullPath.lastIndexOf('/'));
+        var filename = fullPath.substring(startIndex);
+        if (filename.indexOf('\\') === 0 || filename.indexOf('/') === 0) {
+            filename = filename.substring(1);
+    }
+    var ext = filename.split('.').pop();
+    if (ext === 'pptx')
+      $(this).next().next().val("Powerpoint");
+    else if (ext === 'mp3')
+      $(this).next().next().val("mp3");
+    }
+   var $form = $(this).parents('form');
+   $form.ajaxSubmit({
+      success: function(data){
+         //alert(data);
+         location.reload();
+      },
+      url: $form.attr('action'),
+      dataType: 'json',
+error: function(head, stat, err){
+                    $("#id_debug").text(head.responseText);
+                    alert(head.responseText);
+                     alert(stat);
+                     alert(err);
+                   }
+
+   });
+});
+</script>
+
 {% endblock %}

@@ -26,6 +26,12 @@ DEBUG = False
 td = False
 tdir = []
 
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
 ALLOWED_HOSTS = ['*']
 
 has_openshift = 'OPENSHIFT_HOMEDIR' in os.environ
@@ -49,6 +55,7 @@ INSTALLED_APPS = (
 )
 
 MIDDLEWARE_CLASSES = (
+    #'ssl_redirect.middleware.SSLRedirectMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -141,7 +148,7 @@ else:
     STATIC_ROOT = '/home/jchinte/webapps/praisingvoices_static/static'
     
     tdir = [os.path.join(BASE_DIR, 'templates'),]
-    DEBUG = False
+    DEBUG = True
     td = True
     print "STATIC_ROOT = " + STATIC_ROOT
     SITE_ID=2

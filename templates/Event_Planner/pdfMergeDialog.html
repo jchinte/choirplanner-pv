@@ -4,6 +4,14 @@
       <span class="close">&times;</span>
       <span><h2>Choose your files...</h2></span>
       <span><button class="clearBtn">clear</button>
+        <select id="selectset">
+         <option>What kind of music?</option>
+	 <option value="melody">melody</option>
+	 <option value="harmony">harmony</option>
+	 <option value="cantor">cantor</option>
+	 <option value="piano">piano</option>
+	 <option value="guitar">guitar</option>
+	</select>
         <button class="selectAllBtn">get everything</button>
       </span>
     </div>
@@ -182,8 +190,8 @@ openSelectBtns.click(function(){
             event.preventDefault();
           }).appendTo(newItem);
           numImages++;
-          newItem.append("<div class='thumblabel'><p>"+song.title+": "
-             +file.types.join(', ')+"</p></div>");
+          newItem.append("<div class='thumblabel'><p>"+song.title/*+": "
+             +file.types.join(', ')*/+"</p></div>");
           newItem.appendTo(dialogBody);
           newItem.click(function(event){
               event.preventDefault();
@@ -198,7 +206,7 @@ openSelectBtns.click(function(){
             }
             filetypeDictionary[filetype].push(newItem);
           });
-          activateIfExists(['guitar', 'vocal', 'satb', 'harmony', 'octavo']);
+          activateIfExists(['melody']);
           /*if (filetypeDictionary['vocal'])
             activate(filetypeDictionary['vocal']);
           if (filetypeDictionary['satb'])
@@ -256,6 +264,11 @@ $('.clearBtn').click(function(){
 });
 $('.selectAllBtn').click(function(){
   activate($('.thumbInactive'))
+});
+$('#selectset').change(function(event){
+  deactivate($('.thumbActive'));
+  activateIfExists(event.target.value);
+  
 });
 $(document).ready(function(){
 

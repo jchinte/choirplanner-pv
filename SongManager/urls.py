@@ -2,7 +2,7 @@ from django.conf.urls import patterns, url
 #from django.views.generic import ListView
 from models import Song
 from views import  SongFileDeleteView, SongDeleteView, SongCreateView, SongDetailView, SongUpdateView, SongUploadView, SongListView,\
-    JSONSongListView
+    JSONSongListView, JSONFileTypeListView,REST_songfile_filetype_view, REST_songfile_view
 #from django.core.urlresolvers import reverse
 
 urlpatterns = patterns('SongManager.views',
@@ -22,5 +22,7 @@ urlpatterns = patterns('SongManager.views',
 e_delete_view'),
     url(r'^(?P<pk>\d+)/upload/$', SongUploadView.as_view(), name='song_upload_view'),
     url(r'^rest/$', JSONSongListView.as_view(), name='json_songlist_view'),
-
+    url(r'^rest/filetypes/$', JSONFileTypeListView, name='json_filetypelist_view'),
+    url(r'^rest/songfiles/(?P<songfile_id>\d+)$', REST_songfile_view, name='rest_songfile_view'),
+    url(r'^rest/songfiles/(?P<songfile_id>\d+)/(?P<songtype>[\w_-]+)$', REST_songfile_filetype_view, name='rest_songfile_filetype_view'),
 )

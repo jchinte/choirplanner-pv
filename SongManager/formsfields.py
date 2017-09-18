@@ -9,7 +9,7 @@ from SongManager.models import FileType
 class MultiDataField(CharField):
     def to_python(self, value):
         try:
-            return smart_unicode(value).split(';')
+            return list(filter(lambda s: s.strip(), map(lambda s: s.strip(), smart_unicode(value).split(';'))))
         except:
             if isinstance(value, collections.Iterable):
                 return self.to_strings(value)
@@ -19,13 +19,15 @@ class MultiDataField(CharField):
     def to_strings(self, values):
         result = []
         for value in values:
-            try:
-                result.append(smart_unicode(value.strip())) 
-            except:
+            value = value.strip()
+            if value:
                 try:
-                    result.append(value.__str__())
+                    result.append(smart_unicode(value.strip())) 
                 except:
-                    result.append( str(value))
+                    try:
+                        result.append(value.__str__())
+                    except:
+                        result.append( str(value))
         return result        
 
     def validate(self, value):
@@ -150,7 +152,7 @@ class SearchForm(Form):
     options = ChoiceField(SEARCH_CHOICES)
     
 class SongFileForm(ModelForm):
-    filetype_list = MultiDataField(max_length=100, label='File Types')
+    filetype_list = MultiDataField(max_length=100, label='File Types', required=False)
     def __init__(self, *args, **kargs):
         if 'initial' not in kargs:
             kargs['initial'] = {}

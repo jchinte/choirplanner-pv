@@ -6,6 +6,7 @@ admin.autodiscover()
 from views import UserCreateView, AdminUserUpdateView, UserDetailView
 from dh5bp.urls import urlpatterns as dh5bp_urls
 admin.autodiscover()
+from django.http import HttpResponse
 from django.views.generic import RedirectView
 urlpatterns = patterns('',
     # Examples:
@@ -14,8 +15,6 @@ urlpatterns = patterns('',
 
     url(r'^admin/', include(admin.site.urls)),
 )
-
-
 
 
 urlpatterns = patterns('',
@@ -46,5 +45,5 @@ urlpatterns = patterns('',
 
 urlpatterns += dh5bp_urls
 
-handler404 = 'dh5bp.views.page_not_found'
+#handler404 = 'dh5bp.views.page_not_found'
 handler500 = 'dh5bp.views.server_error'

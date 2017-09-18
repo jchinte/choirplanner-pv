@@ -2,7 +2,10 @@ from django.db import models
 from django.utils.encoding import smart_unicode
 from django.utils.encoding import smart_text
 from subprocess import Popen
+from music_planner0 import settings
 from os import path
+import os
+from django.dispatch import receiver
 
 # Create your models here.
 class Composer(models.Model):
@@ -55,6 +58,7 @@ class Song(models.Model):
             s+=" "+str(c)
         return s
 
+
 class SongFile(models.Model):
     #filename = models.CharField(max_length=200)
     file = models.FileField(upload_to='songs')
@@ -85,7 +89,14 @@ class SongFile(models.Model):
 #        print "__unicode__"
 #        print s
         return unicode(s[len(s)-1])
-    
+    def __thumbnail(self):
+        filename = path.splitext(self.file.path)
+        if filename[1]=='.pdf':
+            return path.join(settings.MEDIA_URL, 'songs/', path.basename(filename[0])+'.jpeg')
+        else:
+            return None
+    thumbnail = property(__thumbnail)
+
     def save(self):
         res = super(SongFile, self).save()
         filename = path.splitext(self.file.path)
@@ -95,7 +106,22 @@ class SongFile(models.Model):
             Popen(callList)
         return res
 
+
+
 class FileType(models.Model):
     type = models.CharField(max_length=80)
     def __unicode__(self):
         return smart_text(self.type).strip('\t\n\r\\ ')
+
+
+def _delete_file(path):
+   """ Deletes file from filesystem. """
+   if os.path.isfile(path):
+       print "deleted " + path
+       os.remove(path)
+
+@receiver(models.signals.post_delete, sender=SongFile)
+def delete_file(sender, instance, *args, **kwargs):
+    """ Deletes image files on `post_delete` """
+    if instance.file:
+        _delete_file(instance.file.path)

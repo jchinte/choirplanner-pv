@@ -18,6 +18,8 @@ from django.core import serializers
 from SongManager.models import Composer, FileType, Tag
 from django.utils.encoding import smart_unicode
 from django.core.cache import cache
+from django.utils.encoding import smart_text
+from django.views.decorators.http import require_http_methods
 
 #mixins
 
@@ -131,7 +133,7 @@ class SongUploadView(JSONResponseMixin, SingleObjectTemplateResponseMixin, BaseU
             #print "not post"
             raise Http404
         #print "post reached"
-        xhr = self.request.GET.has_key('xhr')
+        xhr = self.request.is_ajax() or self.request.GET.has_key('xhr')
         #if xhr:
         #    print "true"
         #else:
@@ -143,13 +145,13 @@ class SongUploadView(JSONResponseMixin, SingleObjectTemplateResponseMixin, BaseU
                      'song_pk': self.kwargs['pk'],
                         })
         if form.is_valid():
-            form.save()
+            songfile = form.save()
             
             if xhr:
                 #print "is ajax?"
                 #print self.request
                 #print self.request.is_ajax()
-                #print "xhr branch"
+                print "xhr branch"
                 t = loader.get_template('SongManager/files.html')
                 c = Context({'delete': 'True', 'song_pk': self.kwargs['pk'],})
                 c.update({'files': SongFile.objects.filter(song__pk=self.object.id),})
@@ -159,13 +161,14 @@ class SongUploadView(JSONResponseMixin, SingleObjectTemplateResponseMixin, BaseU
                                  'delete': 'True',
                                  'song_pk': self.kwargs['pk'],
                                   'debug' : 'debug',
+                                 'file_id': songfile.id,
                                  }
                 return JSONResponseMixin.render_to_response(self, response_dict)
             else:
-                #print "non-xhr branch"
+                print "non-xhr branch"
                 return redirect('song_update_view', pk=self.kwargs['pk'])
         else:
-            #print "form is invalid"
+            print "form is invalid"
             return redirect('song_update_view', pk=self.kwargs['pk'])
     
 class SongUpdateView(UpdateView):
@@ -451,3 +454,47 @@ def JSONComposerListView(request):
         
     response = HttpResponse(json.dumps(composer_list,  ensure_ascii=False))
     return response
+
+def REST_songfile_view(request, songfile_id):
+    obj = SongFile.objects.get(pk=songfile_id)
+    response = HttpResponse(status=405)
+    if request.method == 'GET':
+        fts = FileType.objects.filter(songfile__pk=songfile_id)
+        typenames = list(map(lambda obj: smart_unicode(obj.type), fts))
+        response = HttpResponse(json.dumps(typenames, ensure_ascii=False))
+        return response
+    elif request.method == 'POST':
+        pass
+    elif request.method == 'DELETE':
+        obj.delete();
+        return HttpResponse(status=204)
+    elif request.method == 'PUT':
+        pass
+    return response
+
+@require_http_methods(["GET", "POST","DELETE","PUT"])
+def REST_songfile_filetype_view(request, songfile_id, songtype):
+    print "We have entered the filetype view"
+    try:
+        obj = SongFile.objects.get(pk=songfile_id)
+    except SongFile.DoesNotExist:
+        raise Http404("This song does not exist.")
+    
+    if request.method == 'POST' or request.method == 'PUT':
+        type, created = FileType.objects.get_or_create(type=songtype)
+        if not type in obj.filetypes.all():
+            created = True
+        obj.filetypes.add(type)
+        return HttpResponse(status=201) if created else HttpResponse(status=204)
+    elif request.method == 'DELETE':
+        try:
+            type = FileType.objects.get(type=songtype)
+        except FileType.DoesNotExist:
+            raise Http404("File type does not exist.")
+        obj.filetypes.remove(type)
+        return HttpResponse(status=204)
+    try:
+        type = FileType.objects.get(type=songtype)
+    except FileType.DoesNotExist:
+        raise Http404("File type does not exist.")
+    return HttpResponse(status=208)
