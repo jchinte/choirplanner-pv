@@ -85,7 +85,15 @@ DATABASES = {
         'PASSWORD': 'choirplanner',
         'HOST': '127.0.0.1',
         }
+    'postgresql': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'praisingvoices_postgres',
+        'USER': 'pvdb',
+        'PASSWORD': 'liltheo1025',
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
     }
+}
 STATIC_URL = '/static/static/'
 MEDIA_URL = '/static/media/'
 STATICFILES_DIRS = (
