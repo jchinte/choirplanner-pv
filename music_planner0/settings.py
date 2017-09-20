@@ -77,14 +77,13 @@ WSGI_APPLICATION = 'music_planner0.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'OPTIONS': {
-            },
-        'NAME': 'choirplanner',
-        'USER': 'choirplanner',
-        'PASSWORD': 'choirplanner',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'praisingvoices_postgres',
+        'USER': 'pvdb',
+        'PASSWORD': 'liltheo1025',
         'HOST': '127.0.0.1',
-        }
+        'PORT': '5432',
+    },
     'postgresql': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'praisingvoices_postgres',
@@ -92,7 +91,16 @@ DATABASES = {
         'PASSWORD': 'liltheo1025',
         'HOST': '127.0.0.1',
         'PORT': '5432',
-    }
+    },
+    'mysql': {
+        'ENGINE': 'django.db.backends.mysql',
+        'OPTIONS': {
+            },
+        'NAME': 'choirplanner',
+        'USER': 'choirplanner',
+        'PASSWORD': 'choirplanner',
+        'HOST': '127.0.0.1',
+        },
 }
 STATIC_URL = '/static/static/'
 MEDIA_URL = '/static/media/'
@@ -142,6 +150,7 @@ SERIALIZATION_MODULES = {
                          'json': 'wadofstuff.django.serializers.json2' 
                          }
 LOGIN_REDIRECT_URL='/events/'
+LOGIN_URL='/accounts/login'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -182,3 +191,5 @@ SERVER_EMAIL='jchinte@praisingvoices.org'
 ACCOUNT_ACTIVATION_DAYS=7
 REGISTRATION_AUTO_LOGIN = True
 REGISTRATION_ADMINS=[('jchinte','jchinte@praisingvoices.org'),]
+ADMINS=[('jchinte','jchinte@praisingvoices.org'),]
+FILE_UPLOAD_PERMISSIONS=0o644

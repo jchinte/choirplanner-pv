@@ -11,7 +11,7 @@ class UserCreateView(CreateView):
     template_name = "registration/generic_form.html"
     
     def get_success_url(self):
-        return reverse('login_view')
+        return reverse('login')
 
 class AdminUserUpdateView(UpdateView):
     model = User

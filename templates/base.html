@@ -35,7 +35,7 @@
 			<h1>
 				Planner - {{ user.username }}
 			</h1>	
-			<a href="{% url "login_view" %}?next={{ request.build_absolute_uri }}" data-icon="sign-in" data-ajax="false" class="ui-btn-right">Sign in</a>
+			<a href="{% url "login" %}?next={{ request.build_absolute_uri }}" data-icon="sign-in" data-ajax="false" class="ui-btn-right">Sign in</a>
 		{% endif %}
 		</div>
 	
@@ -54,7 +54,7 @@
 		{% if user.is_authenticated %}
     		<p>Welcome, {{ user.username }}. Thanks for logging in.  <a href="{% url 'django.contrib.auth.views.logout_then_login' %}">logout</a></p>
     	{% else %}
-    		<p>Welcome. Please <a href="{% url "login_view" %}?next={{ request.build_absolute_uri }}">log in</a>.</p>
+    		<p>Welcome. Please <a href="{% url "login" %}?next={{ request.build_absolute_uri }}">log in</a>.</p>
 		{% endif %}
 		</div>
 	{% endif %}
