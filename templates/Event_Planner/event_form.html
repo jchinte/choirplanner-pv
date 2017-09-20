@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block extra_js %}
-
+{% load static %}
 
 
 
 {% if event %}
 {% if flavour != "mobile" %}
-<script type="text/javascript" src="{{ STATIC_URL }}jquery.form.js"></script>
+<script type="text/javascript" src="{% static "jquery.form.js" %}"></script>
 	<script>{% include "Event_Planner/event_form.js" %}</script>
 {% endif %}
 	<div id="dialog-add-activity" style="display:none" title="add activity">

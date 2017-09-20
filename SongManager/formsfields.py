@@ -1,7 +1,8 @@
-from models import SongFile, Song, Composer, Tag
+from __future__ import unicode_literals
+from SongManager.models import SongFile, Song, Composer, Tag
 from django.forms import Field, Form, ModelForm, HiddenInput, TextInput, CharField, ChoiceField
 import collections
-from django.utils.encoding import smart_unicode
+from django.utils.encoding import smart_text
 from SongManager.models import FileType
 
 #Fields
@@ -9,7 +10,7 @@ from SongManager.models import FileType
 class MultiDataField(CharField):
     def to_python(self, value):
         try:
-            return list(filter(lambda s: s.strip(), map(lambda s: s.strip(), smart_unicode(value).split(';'))))
+            return list(filter(lambda s: s.strip(), map(lambda s: s.strip(), smart_text(value).split(';'))))
         except:
             if isinstance(value, collections.Iterable):
                 return self.to_strings(value)
@@ -22,7 +23,7 @@ class MultiDataField(CharField):
             value = value.strip()
             if value:
                 try:
-                    result.append(smart_unicode(value.strip())) 
+                    result.append(smart_text(value.strip())) 
                 except:
                     try:
                         result.append(value.__str__())
@@ -85,12 +86,11 @@ def inline_list(object_list):
     result = ""
     first = True
     for name in object_list:
-#        print "name: " + name.__unicode__()
         if first:
             first = False
         else:
             result += ";"
-        result += name.__unicode__()
+        result += name.__str__()
     
     return result
 class SongForm(ModelForm):
@@ -125,9 +125,7 @@ class SongForm(ModelForm):
         ###add many to many fields
         #add composers
         instance.composers.clear()
-        print self.cleaned_data
         for composer_name in self.cleaned_data['composer_list']:
-            #print "composer_name: " + composer_name
             first, last = split_name(composer_name)
             c, created = Composer.objects.get_or_create(first_name=first, last_name=last)
             instance.composers.add(c)

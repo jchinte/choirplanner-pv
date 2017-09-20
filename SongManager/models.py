@@ -1,6 +1,6 @@
+from __future__ import unicode_literals
 from django.db import models
-from django.utils.encoding import smart_unicode
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_text, python_2_unicode_compatible
 from subprocess import Popen
 from music_planner0 import settings
 from os import path
@@ -8,29 +8,32 @@ import os
 from django.dispatch import receiver
 
 # Create your models here.
+@python_2_unicode_compatible
 class Composer(models.Model):
     last_name = models.CharField(max_length=200)
     first_name = models.CharField(max_length=200)
     
     
-    def __unicode__(self):
-        return (smart_unicode(self.first_name) + smart_unicode(' ') + smart_unicode(self.last_name))
+    def __str__(self):
+        return (smart_text(self.first_name) + smart_text(' ') + smart_text(self.last_name))
     
+@python_2_unicode_compatible
 class Tag(models.Model):
     tag_name = models.CharField(max_length=200)
     
-    def __unicode__(self):
-        return smart_unicode(self.tag_name)
+    def __str__(self):
+        return smart_text(self.tag_name)
 
             
 
+@python_2_unicode_compatible
 class Song(models.Model):
     title = models.CharField(max_length=200)
     composers = models.ManyToManyField(Composer, blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
     first_line = models.CharField(max_length=500)
     
-    def __unicode__(self):
+    def __str__(self):
         return self.title
     
     def getFiles(self):
@@ -59,6 +62,7 @@ class Song(models.Model):
         return s
 
 
+@python_2_unicode_compatible
 class SongFile(models.Model):
     #filename = models.CharField(max_length=200)
     file = models.FileField(upload_to='songs')
@@ -67,8 +71,7 @@ class SongFile(models.Model):
     filetypes = models.ManyToManyField('FileType')
     
     def name(self):
-#        print "Name is called"
-        return self.__unicode__()
+        return self.__str__()
     def types(self):
         t = FileType.objects.filter(songfile__song__pk=self.pk)
         
@@ -76,18 +79,12 @@ class SongFile(models.Model):
     def _rawtypes(self):
         ts =self.types()
         d = []
-        print "types list: "
-        print ts
         for t in ts:
-            d.append(t.__unicode__())
-        print "returning filtered: "
-        print d
+            d.append(t.__str__())
         return d
     
-    def __unicode__(self):
+    def __str__(self):
         s = (str(self.file.name)).split('/')
-#        print "__unicode__"
-#        print s
         return unicode(s[len(s)-1])
     def __thumbnail(self):
         filename = path.splitext(self.file.path)
@@ -102,22 +99,21 @@ class SongFile(models.Model):
         filename = path.splitext(self.file.path)
         if filename[1]=='.pdf':
             callList = ("gs -q -dNOPAUSE -sDEVICE=jpeg -dBATCH -dPDFFitPage=true -dDEVICEWIDTHPOINTS=170 -dDEVICEHEIGHTPOINTS=220 -r300 -sOutputFile="+filename[0]+".jpeg "+self.file.path).split()
-            print(callList)
             Popen(callList)
         return res
 
 
 
+@python_2_unicode_compatible
 class FileType(models.Model):
     type = models.CharField(max_length=80)
-    def __unicode__(self):
+    def __str__(self):
         return smart_text(self.type).strip('\t\n\r\\ ')
 
 
 def _delete_file(path):
    """ Deletes file from filesystem. """
    if os.path.isfile(path):
-       print "deleted " + path
        os.remove(path)
 
 @receiver(models.signals.post_delete, sender=SongFile)

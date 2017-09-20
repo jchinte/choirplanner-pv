@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+from django.utils.encoding import python_2_unicode_compatible
 from django.db import models
 from SongManager.models import Song, SongFile
 from model_utils.managers import InheritanceManager
@@ -6,6 +8,7 @@ from django.contrib.auth.models import User
 #from inheritance import ParentModel, ChildManager
 
 # Create your models here.
+@python_2_unicode_compatible
 class Event(models.Model):
     date = models.DateTimeField()
     title = models.CharField(max_length=100, blank=True)
@@ -23,7 +26,7 @@ class Event(models.Model):
                     return True
         return False
 
-    def __unicode__(self):
+    def __str__(self):
         return self.title
 
      
@@ -35,7 +38,8 @@ class Event(models.Model):
         permissions = (
             ("can_create_template", "Can create an event template"),
         )
-    
+
+@python_2_unicode_compatible    
 class Segment(models.Model):
     order = models.PositiveIntegerField()
     title = models.CharField(max_length=100, blank=True)
@@ -47,7 +51,7 @@ class Segment(models.Model):
 #    objects = models.Manager()
 #    children = ChildManager()
     
-    def __unicode__(self):
+    def __str__(self):
         return self.title
     class Meta:
         ordering = ["order"]
@@ -60,24 +64,25 @@ class LinkedSegment(Segment):
 class SongSegment(Segment):
     song = models.ForeignKey(Song, blank=True, null=True)
     def getFiles(self):
-        print "getfiles called"
         return SongFile.objects.filter(song__pk=self.song.id)
     files = property(getFiles)
-    
+
+@python_2_unicode_compatible    
 class Role(models.Model):
     name = models.CharField(max_length=80)
     
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 #    participants = models.ManyToManyField(User, through='Activity')
     #participants = models.ManyToManyField('Participant', through='Activity')
     
+@python_2_unicode_compatible
 class Participant(models.Model):
     name = models.CharField(max_length=100)
     email = models.EmailField(blank=True, null=True)
     roles = models.ManyToManyField(Role, through='Activity')
     
-    def __unicode__(self):
+    def __str__(self):
         return self.name
     
 class Activity(models.Model):

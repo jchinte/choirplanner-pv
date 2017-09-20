@@ -1,4 +1,4 @@
-from models import Event, Segment, SongSegment, Role, Participant, Activity
+from Event_Planner.models import Event, Segment, SongSegment, Role, Participant, Activity
 from django.contrib import admin
 
 admin.site.register(Event)

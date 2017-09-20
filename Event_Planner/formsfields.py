@@ -1,4 +1,5 @@
-from models import Participant, Activity, Event
+from __future__ import unicode_literals
+from Event_Planner.models import Participant, Activity, Event
 from django.forms import ModelForm, HiddenInput, SplitDateTimeWidget, \
             SplitDateTimeField, CharField, DateInput, TimeInput
 from django.forms.forms import Form
@@ -12,9 +13,6 @@ class ParticipantForm(ModelForm):
     class Meta:
         model = Participant
         fields = ('name', 'email')
-#        widgets = {
-#                   'song' : HiddenInput
-#        }
 
 class ActivityForm(ModelForm):
     class Meta:
@@ -52,9 +50,8 @@ class EventForm(ModelForm): # alsjdsljh
                                                 ])
     class Meta:
         model = Event 
-       # widgets = {'date': SplitDateTimeWidget(time_format='%I:%M%p')}
         exclude=('is_template','')
-        #exclude=('is_prototype',)
+
         
 class EventTemplateForm(ModelForm):
     class Meta:
@@ -90,8 +87,7 @@ class AjaxActivityForm(ModelForm):
         self.instance.role = self.role
         self.instance.participant = self.participant
         return self.instance.save()
-        #return super(AjaxActivityForm).save()
-#        
+      
     
     class Meta:
         model=Activity

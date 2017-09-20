@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-
+{% load static %}
 {% block extra_js %}
 <!--link rel="stylesheet" href="https://rawgithub.com/arschmitz/jquery-mobile-datepicker-wrapper/master/jquery.mobile.datepicker.css" /-->
-<!--link rel="stylesheet" href="{{ STATIC_URL }}jquery-ui/jquery-ui.min.css" /-->
-<link rel="stylesheet" href="{{ STATIC_URL }}css/event_form.css" />
-<!--script src="{{ STATIC_URL }}jquery-ui/jquery-ui.min.js" /-->
+<!--link rel="stylesheet" href="{% static "jquery-ui/jquery-ui.min.css" %}" /-->
+<link rel="stylesheet" href="{% static "css/event_form.css" %}" />
+<!--script src="{% static "jquery-ui/jquery-ui.min.js" %}" /-->
 <!--script src="https://rawgithub.com/jquery/jquery-ui/1-10-stable/ui/jquery.ui.datepicker.js"></script-->
 <!--script src="https://rawgithub.com/arschmitz/jquery-mobile-datepicker-wrapper/master/jquery.mobile.datepicker.js"></script-->
-<script type="text/javascript" src="{{ STATIC_URL }}jquery.form.js"></script>
+<script type="text/javascript" src="{% static "jquery.form.js" %}"></script>
 <script>{% include "mobile/Event_Planner/event_form.js" %}</script>
 {% endblock %}
 

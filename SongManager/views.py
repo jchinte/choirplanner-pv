@@ -1,10 +1,11 @@
 # Create your views here.
+from __future__ import unicode_literals
 from django.db.models import Q
 from django.shortcuts import redirect
 from django.template import Context, loader
 #from django.template.context import RequestContext
-from models import Song, SongFile
-from formsfields import SongFileForm, SongForm, SearchForm
+from SongManager.models import Song, SongFile
+from SongManager.formsfields import SongFileForm, SongForm, SearchForm
 from django import http
 from django.http import Http404, HttpResponse
 from django.views.generic import DeleteView, DetailView, UpdateView, ListView, CreateView
@@ -16,7 +17,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.utils.decorators import method_decorator
 from django.core import serializers
 from SongManager.models import Composer, FileType, Tag
-from django.utils.encoding import smart_unicode
+from django.utils.encoding import smart_text
 from django.core.cache import cache
 from django.utils.encoding import smart_text
 from django.views.decorators.http import require_http_methods
@@ -26,12 +27,9 @@ from django.views.decorators.http import require_http_methods
 class SearchQueryMixin(object):
     def search(self, searchTerms, opts, objects):
         cacheString = "search"+str(searchTerms)+str(opts)+str(objects)
-        print "cacheString: "+cacheString
         qset = cache.get(cacheString)
         if qset is not None:
-            print "cache hit"
             return qset
-        print "cache miss"
         query = Q()
         for search_term in searchTerms:
             if opts=='B':
@@ -97,18 +95,16 @@ class SongDetailView(DetailView):
         context.update({
                         'page_id':'SongDetail'+str(self.object.id)
                         })
-        #print "context: "
-        #print context
         t = loader.get_template('SongManager/files.html')
-        c = Context({
+        c = {
             'files': SongFile.objects.filter(song__pk=self.object.id),
             'youtube': True
-        })
+        }
         c.update({'song':self.object})
         filedata = t.render(c)
         context.update({'files': filedata })
         
-        if (self.request.META.has_key('HTTP_REFERER')):
+        if 'HTTP_REFERER' in  self.request.META:
             context.update({'back_url':self.request.META['HTTP_REFERER']})
         
         return context
@@ -128,16 +124,9 @@ class SongUploadView(JSONResponseMixin, SingleObjectTemplateResponseMixin, BaseU
         return super(SongUploadView, self).dispatch(*args, **kwargs)
        
     def render_to_response(self, context):
-        #print "upload reached"
         if not self.request.POST:
-            #print "not post"
             raise Http404
-        #print "post reached"
-        xhr = self.request.is_ajax() or self.request.GET.has_key('xhr')
-        #if xhr:
-        #    print "true"
-        #else:
-        #    print "false"
+        xhr = self.request.is_ajax() or 'xhr' in self.request
         form = SongFileForm(self.request.POST, self.request.FILES)
         context.update({
                      'files': SongFile.objects.filter(song__pk=self.object.id),
@@ -148,12 +137,8 @@ class SongUploadView(JSONResponseMixin, SingleObjectTemplateResponseMixin, BaseU
             songfile = form.save()
             
             if xhr:
-                #print "is ajax?"
-                #print self.request
-                #print self.request.is_ajax()
-                print "xhr branch"
                 t = loader.get_template('SongManager/files.html')
-                c = Context({'delete': 'True', 'song_pk': self.kwargs['pk'],})
+                c = {'delete': 'True', 'song_pk': self.kwargs['pk'],}
                 c.update({'files': SongFile.objects.filter(song__pk=self.object.id),})
                 filedata = t.render(c)
                 response_dict = {
@@ -165,10 +150,8 @@ class SongUploadView(JSONResponseMixin, SingleObjectTemplateResponseMixin, BaseU
                                  }
                 return JSONResponseMixin.render_to_response(self, response_dict)
             else:
-                print "non-xhr branch"
                 return redirect('song_update_view', pk=self.kwargs['pk'])
         else:
-            print "form is invalid"
             return redirect('song_update_view', pk=self.kwargs['pk'])
     
 class SongUpdateView(UpdateView):
@@ -188,13 +171,13 @@ class SongUpdateView(UpdateView):
         songfile_upload_form = SongFileForm(initial={'song': self.object.id})
         compList = []
         for c in Composer.objects.all():
-            compList.append(c.__unicode__())
+            compList.append(c.__str__())
         fileTypeList = []
         for t in FileType.objects.all():
-            fileTypeList.append(t.__unicode__())
+            fileTypeList.append(t.__str__())
         tagList = []
         for n in Tag.objects.all():
-            tagList.append(n.__unicode__())
+            tagList.append(n.__str__())
         context.update({
                         'file_form': songfile_upload_form,
                         'files': SongFile.objects.filter(song__pk=self.object.id),
@@ -227,7 +210,6 @@ class SongListView(JSONResponseMixin, ListView, SearchQueryMixin):
         return super(SongListView, self).dispatch(*args, **kwargs)    
 
     def get_Page_dictionary(self, page_object):
-        #print "page object"
         page_dict = {
                      'has_next': page_object.has_next(),
                      'has_previous': page_object.has_previous(),
@@ -245,55 +227,41 @@ class SongListView(JSONResponseMixin, ListView, SearchQueryMixin):
         return  {'page' : page_dict} 
     
     def get(self, request, *args, **kwargs):
-        if request.GET.has_key('page_size'):
+        if 'page_size' in request.GET:
             self.paginate_by = int(request.GET['page_size'])
         return super(SongListView, self).get(request, *args, **kwargs)
     
     def render_to_response(self, context):
         context.update({'page_class':'paginated"'})
-        print "render enter!"
         r = self.request
-        #print r
         if not r.POST:
-            #print "GEt"
-            search = r.GET.get(u'search')
-            if (r.GET.has_key('options')):
+            search = r.GET.get('search')
+            if 'options' in r.GET:
                 opts=r.GET['options']
             else:
                 opts='A'            
             if search:
-                search_terms = str(r.GET.get(u'search')).split()
+                search_terms = str(r.GET.get('search')).split()
                 self.queryset = self.search(search_terms, opts, self.model.objects)
             else:
                 search=''
                 self.queryset = self.model.objects.all()
-            print "continue"
             paginator, page, paginated_list, isp = self.paginate_queryset(self.queryset, self.paginate_by)
-            xhr = r.GET.has_key('xhr')
+            xhr = 'xhr' in r.GET
             if xhr:
-                print "is_ajax"
                 response_dict = {}
                 t = loader.get_template('SongManager/songs.html')
-                #print "loader"
-                c = Context({'song_list': paginated_list})
-                #print "context"
+                c = {'song_list': paginated_list}
                 
                 c.update(self.get_Page_dictionary(page))
-                #print "context2"
                 c.update({'search': search})
-                #print c
                 songdata = t.render(c)
-#                print songdata
                 response_dict.update(self.get_Page_dictionary(page))
-                #print paginated_list.values()
-                #print serializers.serialize('json', paginated_list, use_natural_keys=true)
-                #print serializers.serialize('json', paginated_list, indent=4, relations={'composers':{'extras':('__unicode__',)},},\
-                 #                           extras=('__unicode__','get_absolute_url'))
                 response_dict.update({
                                       'songs': songdata,
                                       'songs_json': serializers.serialize('json', paginated_list, indent=4,\
-                                            relations={'composers':{'extras':('__unicode__',)},},\
-                                            extras=('__unicode__','get_absolute_url', 'get_delete_url', 'get_update_url')),
+                                            relations={'composers':{'extras':('__str__',)},},\
+                                            extras=('__str__','get_absolute_url', 'get_delete_url', 'get_update_url')),
                                       'edit_perm': r.user.has_perm('SongManager.change_song'),
                                       'delete_perm': r.user.has_perm('SongManager.delete_song'),
                                       'search': search,
@@ -323,44 +291,39 @@ class JSONSongListView(SongListView):
         start = 0
         r = self.request
         if not r.POST:
-            search = r.GET.get(u'search')
+            search = r.GET.get('search')
             q = None
-            if (r.GET.has_key('options')):
+            if 'options' in r.GET:
                 opts=r.GET['options']
             else:
                 opts='A'
-            if r.GET.has_key('limit'):
+            if 'limit' in r.GET:
                 limit = int(r.GET['limit'])
-            if r.GET.has_key('start'):
+            if 'start' in r.GET:
                 start = int(r.GET['start'])      
             if search:
-                search_terms = str(r.GET.get(u'search')).split()
+                search_terms = str(r.GET.get('search')).split()
                 if limit>0:
                     
                     q = self.search(search_terms, opts, self.model.objects)
-                    print "length: "+str(len(q))
                     self.queryset = q[start:start+limit]
-                    print "returning len "+str(len(self.queryset))
                 else:
                     self.queryset = self.search(search_terms, opts, self.model.objects)
                     q = self.queryset
             else:
                 search=''
                 if limit>0:
-                    print limit
                     q = self.model.objects.all()
                     self.queryset = q[start:start+limit]
                 else:
                     self.queryset = self.model.objects.all()
                     q = self.queryset
-
-            print self.queryset
             response_dict = {}
 
             response_dict.update({ 
                                   'songs_json': serializers.serialize('json', self.queryset, indent=4,\
-                                        relations={'composers':{'extras':('__unicode__',)},},\
-                                        extras=('__unicode__','get_absolute_url', 'get_delete_url', 'get_update_url')),
+                                        relations={'composers':{'extras':('__str__',)},},\
+                                        extras=('__str__','get_absolute_url', 'get_delete_url', 'get_update_url')),
                                   'search': search,
                                   'search_url': reverse('song_list_view'),
                                   'option': opts,
@@ -426,7 +389,7 @@ class SongFileDeleteView(DeleteView):
 
 def JSONFileTypeListView(request):
     term = None
-    if request.GET.has_key('term'):
+    if 'term' in request.GET:
         term = request.GET['term']
     if term:
         filetypes = FileType.objects.filter(type__icontains=term) 
@@ -434,7 +397,7 @@ def JSONFileTypeListView(request):
         filetypes = FileType.objects.all()
     filetype_list = []
     for filetype in filetypes:
-        filetype_list.append(smart_unicode(filetype))
+        filetype_list.append(smart_text(filetype))
         
     response = HttpResponse(json.dumps(filetype_list,  ensure_ascii=False))
     return response
@@ -442,7 +405,7 @@ def JSONFileTypeListView(request):
 
 def JSONComposerListView(request):
     term = None
-    if request.GET.has_key('term'):
+    if 'term' in request.GET:
         term = request.GET['term']
     if term:
         composers = Composer.objects.filter(Q(first_name__icontains=term)|Q(last_name__icontains=term)) 
@@ -450,7 +413,7 @@ def JSONComposerListView(request):
         composers = Composer.objects.all()
     composer_list = []
     for composer in composers:
-        composer_list.append(smart_unicode(composer))
+        composer_list.append(smart_text(composer))
         
     response = HttpResponse(json.dumps(composer_list,  ensure_ascii=False))
     return response
@@ -460,7 +423,7 @@ def REST_songfile_view(request, songfile_id):
     response = HttpResponse(status=405)
     if request.method == 'GET':
         fts = FileType.objects.filter(songfile__pk=songfile_id)
-        typenames = list(map(lambda obj: smart_unicode(obj.type), fts))
+        typenames = list(map(lambda obj: smart_text(obj.type), fts))
         response = HttpResponse(json.dumps(typenames, ensure_ascii=False))
         return response
     elif request.method == 'POST':
@@ -474,7 +437,6 @@ def REST_songfile_view(request, songfile_id):
 
 @require_http_methods(["GET", "POST","DELETE","PUT"])
 def REST_songfile_filetype_view(request, songfile_id, songtype):
-    print "We have entered the filetype view"
     try:
         obj = SongFile.objects.get(pk=songfile_id)
     except SongFile.DoesNotExist:

@@ -1,11 +1,12 @@
-from django.conf.urls import patterns, url
+from __future__ import unicode_literals
+from django.conf.urls import url
 #from django.views.generic import ListView
-from models import Song
-from views import  SongFileDeleteView, SongDeleteView, SongCreateView, SongDetailView, SongUpdateView, SongUploadView, SongListView,\
+from SongManager.models import Song
+from SongManager.views import  SongFileDeleteView, SongDeleteView, SongCreateView, SongDetailView, SongUpdateView, SongUploadView, SongListView,\
     JSONSongListView, JSONFileTypeListView,REST_songfile_filetype_view, REST_songfile_view
 #from django.core.urlresolvers import reverse
 
-urlpatterns = patterns('SongManager.views',
+urlpatterns = [
     url(r'^generic/$', SongListView.as_view(), name="old_song_list_view"),
     url(r'^generic/(?P<pk>\d+)/$', SongDetailView.as_view(), name="old_song_detail_view" ),
     url(r'^generic/create/$', SongCreateView.as_view(), name='old_song_create_view' ),
@@ -25,4 +26,4 @@ e_delete_view'),
     url(r'^rest/filetypes/$', JSONFileTypeListView, name='json_filetypelist_view'),
     url(r'^rest/songfiles/(?P<songfile_id>\d+)$', REST_songfile_view, name='rest_songfile_view'),
     url(r'^rest/songfiles/(?P<songfile_id>\d+)/(?P<songtype>[\w_-]+)$', REST_songfile_filetype_view, name='rest_songfile_filetype_view'),
-)
+]

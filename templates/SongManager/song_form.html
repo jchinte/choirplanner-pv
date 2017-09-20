@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
 {% load song_extras %}
 {% block extra_js %}
+{% load static %}
 {% if file_form %}
-	<script type="text/javascript" src="{{ STATIC_URL }}jquery.form.js"></script>
-	<script src="{{ STATIC_URL }}js/tag-it.js" type="text/javascript" charset="utf-8"></script>
+	<script type="text/javascript" src="{% static "jquery.form.js" %}"></script>
+	<script src="{% static "js/tag-it.js" %}" type="text/javascript" charset="utf-8"></script>
 	<script type="text/javascript">
 	// post-submit callback 
 	function showResponse(responseText, statusText, xhr, $form)  { 
@@ -101,7 +102,7 @@
 	
 	
 	</script>
-	<link href="{{ STATIC_URL }}css/jquery.tagit.css" rel="stylesheet" type="text/css">
+	<link href="{% static "css/jquery.tagit.css" %}" rel="stylesheet" type="text/css">
 {% endif %}
 {% endblock %}
 
@@ -121,7 +122,7 @@
 	</form>
 	<span class="hint">Type in a query string to search for users</span>
 	<div class="margin">
-		<span id="spinner"><img src="{{ STATIC_URL }}spinner.gif"/></span>
+		<span id="spinner"><img src="{% static "spinner.gif" %}"/></span>
 		<div id="result"></div>
 	</div>
 	<p>

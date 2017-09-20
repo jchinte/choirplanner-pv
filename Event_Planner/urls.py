@@ -1,7 +1,8 @@
-from django.conf.urls import patterns, include, url
+from __future__ import unicode_literals
+from django.conf.urls import include, url
 from django.views.generic import ListView
-from models import Event
-from views import EventDetailView, \
+from Event_Planner.models import Event
+from Event_Planner.views import EventDetailView, \
             EventCreateView, \
             EventUpdateView, \
             EventDeleteView, \
@@ -27,7 +28,7 @@ from Event_Planner.views import JSONSegmentDeleteView,\
 # from django.contrib import admin
 # admin.autodiscover()
 
-urlpatterns = patterns('Event_Planner.views',
+urlpatterns = [
     url(r'^$', EventListView.as_view(), name='event_list_view'),
     url(r'^archive/$', EventArchiveView.as_view(), name='event_archive_view'),
     url(r'^templates/$', TemplateListView.as_view(), name='template_list_view'),
@@ -67,4 +68,4 @@ urlpatterns = patterns('Event_Planner.views',
 
     # Uncomment the next line to enable the admin:
     # url(r'^admin/', include(admin.site.urls)),
-)
+]

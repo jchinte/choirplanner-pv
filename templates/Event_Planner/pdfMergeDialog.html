@@ -23,7 +23,8 @@
   </div>
 </div>
 <div class="loader" hidden>Loading...</div>
-<script src="{{ STATIC_URL }}/js/jquery.binarytransport.js"></script>
+{% load static %}
+<script src="{% static "/js/jquery.binarytransport.js" %}"></script>
 <script>
 var isDragging = false;
 var dialogBody = $(".modal-body");

@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import permission_required
 from django.utils.decorators import method_decorator
 from django.core.urlresolvers import reverse
-from forms import UserCreationForm2
+from music_planner0.forms import UserCreationForm2
 
 class UserCreateView(CreateView):
     form_class = UserCreationForm2

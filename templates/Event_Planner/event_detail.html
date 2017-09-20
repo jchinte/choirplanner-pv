@@ -1,8 +1,11 @@
 {% extends "base.html" %}
 {% block main %}
-<!--script src="{{ STATIC_URL }}js/dropzone.js"> </script-->
-<script src="{{ STATIC_URL }}jquery.form.js"></script>
-<link rel="stylesheet" href="{{ STATIC_URL }}css/dropzone.css" />
+{% load static %}
+<!--script src="{% static "js/dropzone.js" %}"> </script-->
+<script src="{% static "jquery.form.js" %}"></script>
+<link rel="stylesheet" href="{% static "css/dropzone.css" %}" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.0/jquery-confirm.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.0/jquery-confirm.min.js"></script>
 <p>
 <h1>{{ event.title }}</h1>
 <h2>{{ event.date }}</h2>
@@ -33,14 +36,15 @@
 			<div data-role="collapsible" class="noPrint fallback"> 
 			  <h4>Documents 
 </h4>	{% if perms.Event_Planner.add_event %}
-<input type="checkbox" class="togglebox" id="edit{{ s.songsegment.id }}" data-role="none" /><label class="segEditIconLabel" for="edit{{ s.songsegment.id }}" id="editicon{{ s.songsegment.id }}" class="segEditLabel" data-role="none"><span><img class="segEditIcon" src="{{ STATIC_URL }}img/pencil2.png" /></span></label>{% endif %}
+<input type="checkbox" class="togglebox" id="edit{{ s.songsegment.id }}" data-role="none" /><label class="segEditIconLabel" for="edit{{ s.songsegment.id }}" id="editicon{{ s.songsegment.id }}" class="segEditLabel" data-role="none"><span><img class="segEditIcon" src="{% static "img/pencil2.png" %}" /></span></label>{% endif %}
 
 					{% if s.songsegment.song.files %}
 	<ul>
     {% for file in s.songsegment.song.files %}
         <li>
 	  <span class="clearfix">
-        {% if flavour == "mobile" %}
+            {% if perms.Event_Planner.add_event %}<span class="deletefilebutton" deletefrom="{% url 'rest_songfile_view' file.id %}">&times;</span>{% endif %}
+            {% if flavour == "mobile" %}
         <a href="{{ file.file.url }}" class="noPrint ui-btn ui-btn-inline" data-ajax="false">download</a> 
         {% else %}
         <a href="{{ file.file.url }}" class="noPrint mouseover-thumbnail-holder ui-btn ui-btn-inline" data-ajax="false"><button>download</button>
@@ -195,9 +199,13 @@ $(document).one("pagebeforeshow", f);
 {% endif %}
 <script>
 {% include 'csrf.js' %}
-function remove(){
+function remove(n){
   var deleteurl = this.getAttribute("deletefrom");
-  var currentTag = this.parentNode
+  var currentTag = this.parentNode;
+  if (!(typeof n===undefined)){ 
+      console.log(n);
+      currentTag = n;
+  }
   $.ajax({
     
     url: deleteurl,
@@ -213,6 +221,28 @@ function remove(){
     }
   });
 }
+function remove2(me){
+    var deleteurl = me.getAttribute("deletefrom");
+    var currentTag = me.parentNode;
+    //var parent = this.currentTag.parent;
+    console.log("tag:    " + currentTag);
+
+    $.ajax({
+      
+      url: deleteurl,
+      type: 'DELETE',
+      success: function(){
+          console.log("parent: " + currentTag.parentNode);
+          currentTag.parentNode.parentNode.removeChild(currentTag.parentNode);
+      },
+      error: function(head, stat, err){
+         //$("#id_debug").text(head.responseText);
+         //alert(head.responseText);
+         //alert(stat);
+         //alert(err);
+      }
+    });
+  }
 
 function createTag(type, addurl){
    tag = document.createElement("span");
@@ -284,6 +314,21 @@ $(".addtagbutton").click(function(){
 
 });
 $(".deletetagbutton").click(remove);
+$(".deletefilebutton").click(function(){
+        var me = this;
+        $.confirm({
+        title: 'Delete file...',
+        content: "Delete file? This can't be undone!",
+        buttons: {
+            delete: function(){
+                console.log(me.parentNode);
+                remove2(me);
+            },
+            cancel:function(){}
+        }
+    })
+    //click(remove2)
+});
 $(".ev_fileinput").change(function(ev){
 //   alert("change");
     var fullPath = this.value;

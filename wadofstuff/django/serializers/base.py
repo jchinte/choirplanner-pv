@@ -2,12 +2,13 @@
 try:
     from cStringIO import StringIO
 except ImportError:
-    from StringIO import StringIO
+    from io import StringIO
 
 from django.core.serializers import base
+from django.core.serializers.base import Serializer as BaseSerializer
 
 
-class Serializer(base.Serializer):
+class Serializer(BaseSerializer):
     """Serializer for Django models inspired by Ruby on Rails serializer.
 
     """

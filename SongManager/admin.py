@@ -1,4 +1,4 @@
-from models import Song, Tag, Composer, SongFile, FileType
+from SongManager.models import Song, Tag, Composer, SongFile, FileType
 from django.contrib import admin
 
 admin.site.register(Song)

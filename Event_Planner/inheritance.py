@@ -24,13 +24,7 @@ class ParentModel(models.Model):
         super(ParentModel, self).save(*args, **kwargs)
 
     def get_child_name(self):
-        print "type(self)"
-        print type(self)
-        print "self.get_parent_model()"
-        print self.get_parent_model()
         if type(self) is self.get_parent_model():
-            print "---self is parent  - "
-            print self._child_name
             return self._child_name
         return self.get_parent_link().related_query_name()
 
