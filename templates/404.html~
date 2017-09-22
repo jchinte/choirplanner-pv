@@ -1,0 +1,11 @@
+<html>
+<head>
+<title>Page Not Found</title>
+</head>
+<body>
+<h1>Confused?</h1>
+Looks like you lost your way. <h2><a href="https://praisingvoices.org">Come back!</a></h2
+
+<img src="{{ STATIC_URL }}img/faeries-aire.gif"/>
+</body>
+</html>

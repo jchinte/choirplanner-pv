@@ -1,0 +1,267 @@
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<style>
+/* The Modal (background) */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    padding-top: 100px; /* Location of the box */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content */
+.modal-content {
+    position: relative;
+    background-color: #fefefe;
+    margin: auto;
+    padding: 0;
+    border: 1px solid #888;
+    width: 80%;
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+    -webkit-animation-name: animatetop;
+    -webkit-animation-duration: 0.4s;
+    animation-name: animatetop;
+    animation-duration: 0.4s
+}
+
+/* Add Animation */
+@-webkit-keyframes animatetop {
+    from {top:-300px; opacity:0}
+    to {top:0; opacity:1}
+}
+
+@keyframes animatetop {
+    from {top:-300px; opacity:0}
+    to {top:0; opacity:1}
+}
+
+/* The Close Button */
+.close {
+    color: white;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.modal-header {
+    padding: 2px 16px;
+    background-color: #5cb85c;
+    color: white;
+}
+
+.modal-body {
+  padding: 2px 16px;
+    max-height:calc(100vh-210px);
+    max-width: calc(100vw - 100px);
+    overflow-x:auto;
+    white-space: nowrap;
+}
+.modal-body-thumbspan {
+  white-space: normal;
+}
+
+.modal-footer {
+    padding: 2px 16px;
+    background-color: #5cb85c;
+    color: white;
+}
+.thumb {
+  margin: 1em;
+  padding: 10px 10px;
+  align-content: center;
+  vertical-align: top;
+  display: inline-block;
+  //width:350px;
+}
+.thumbActive {
+  background-color: #5cb85c;
+}
+.thumbInactive{
+  background-color: #fefefe;
+}
+.thumblabel {
+  position:inherit;
+  text-align: center;
+  width: 240px;
+  max-width: 240px;
+  overflow-x: hidden;
+  right:10px;
+  top:10px;
+  word-wrap: break-word;
+  align-content: center;
+  white-space: normal;
+}
+</style>
+</head>
+<body>
+<button id="openSelectPDFsDialog">Choose PDFs</button>
+
+<div id="selectDialog" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <span class="close">&times;</span>
+      <h2>Choose your files...</h2>
+    </div>
+    <div class="modal-body">
+      <p>meh!!!!!!!!!!!!!!!......................................................................................................................................................................................................................................................................... .............................!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!</p>
+
+    </div>
+    <div class="modal-footer">
+      <h3>Ready? tap this to continue.</h3>
+    </div>
+  </div>
+</div>
+<script>
+var isDragging = false;
+var dialogBody = $(".modal-body");
+var dialog = $("#selectDialog");
+var openSelectBtn = $("#openSelectPDFsDialog");
+var closeBtn = $(".close");
+var mouseX = 0;
+var mouseY = 0;
+var t;
+var maxScroll = 0;
+var mouseDown = false;
+var velocity;
+var timer;
+
+dialogBody.mousedown(function(ev){
+  ev.preventDefault();
+  velocity = 0;
+  isDragging = false;
+  mouseX = ev.pageX;
+  mouseY = ev.pageY;
+  t = new Date();
+  mouseDown = true;
+});
+
+function scrollInBounds(scrollVal){
+  if (scrollVal > maxScroll) scrollVal = maxScroll;
+  if (scrollVal < 0) scrollVal = 0;
+  return scrollVal;
+}
+
+function carryMomentum(){
+  clearTimeout(timer);
+  if (mouseDown) return;
+  var scrollVal = dialogBody.scrollLeft();
+  scrollVal = scrollInBounds(scrollVal + 10*velocity);
+  dialogBody.scrollLeft(scrollVal);
+  velocity = 0.9*velocity;
+  if (scrollVal> 0 && scrollVal < maxScroll&& Math.abs(velocity) > 0.01){
+    timer = setTimeout(carryMomentum, 10);
+  }
+}
+$(document).mousemove(function(ev){
+  ev.preventDefault();
+  if (mouseDown){
+    var t2 = new Date();
+    var x2 = ev.pageX;
+    var dx = x2 - mouseX;
+    var scrollVal = dialogBody.scrollLeft();
+    scrollVal = scrollVal - dx;
+    if (scrollVal > maxScroll) scrollVal = maxScroll;
+    if (scrollVal < 0) scrollVal = 0;
+    dialogBody.scrollLeft(scrollVal);
+    velocity = -dx / (t2.getTime() - t.getTime());
+    mouseX = x2;
+    t = t2;
+    isDragging = true;
+  }
+});
+$(document).mouseup(function(ev){
+  ev.preventDefault();
+  if (mouseDown){
+    var t2 = new Date();
+    var x2 = ev.pageX;
+    var dx = x2 - mouseX;
+    if (velocity != 0){
+      timer = setTimeout(carryMomentum, 0);
+    }
+
+    var wasDragging = isDragging;
+  }
+  mouseDown = false;
+});
+
+openSelectBtn.click(function(){
+  dialog.show();
+  maxScroll = dialogBody[0].scrollWidth - dialogBody.innerWidth();
+  dialogBody.scrollLeft(maxScroll);
+
+});
+closeBtn.click(function(){
+  dialog.hide();
+});
+$(document).ready(function(){
+  $.get("/events/391/pdfList", function(data){
+    data = JSON.parse(data);
+    console.log(data);
+    console.log(data.length);
+    $.each (data, function(index, song){
+      //console.log(song);
+      $.each(song['files'], function(index, file){
+        console.log(file);
+        if (typeof(file.thumbnail)==="undefined"){
+            console.log("no thumb")
+        }else{
+          newItem = $('<div/>', {
+            class:"thumb thumbActive"
+          }).attr("songid", file.id);
+
+          $('<img/>',{
+            src: file.thumbnail
+          }).click(function(event){
+            event.preventDefault();
+          }).appendTo(newItem);
+          newItem.append("<div class='thumblabel'><p>"+song.title+": "
+             +file.types.join()+"</p></div>");
+          newItem.appendTo(dialogBody);
+          newItem.click(function(event){
+              event.preventDefault();
+              console.log(song.id);
+              if (!isDragging){
+                $(event.target).closest(".thumb").toggleClass("thumbActive");
+                $(event.target).closest(".thumb").toggleClass("thumbInctive");
+              }
+          });
+          console.log(newItem.html());
+
+        }
+      });
+    });
+    $(".modal-footer").click(function(event){
+      var files = $('.thumbActive');
+      console.log(files);
+      var ids = []
+      $.each(files, function(index, file){
+        console.log($(file))
+        ids.push($(file).attr("songid"));
+      });
+      console.log(ids);
+      console.log($.param({fid:ids}));
+      window.location.href='/events/391/rawPDF?'+$.param({fid:ids});
+    });
+    /*ata.forEach(function(song){
+
+    });*/
+  });
+});
+</script>
+</body>
+</html>
