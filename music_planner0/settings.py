@@ -30,12 +30,14 @@ tdir = []
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
+
+
 CSRF_COOKIE_SECURE = True
 
 ALLOWED_HOSTS = ['*']
 
 has_openshift = 'OPENSHIFT_HOMEDIR' in os.environ
-
+webfaction = 'HOSTNAME' in os.environ and 'webfaction' in os.environ['HOSTNAME']
 # Application definition
 
 INSTALLED_APPS = (
@@ -95,13 +97,21 @@ DATABASES = {
     'mysql': {
         'ENGINE': 'django.db.backends.mysql',
         'OPTIONS': {
-            },
+            }, 
         'NAME': 'choirplanner',
         'USER': 'choirplanner',
         'PASSWORD': 'choirplanner',
         'HOST': '127.0.0.1',
         },
 }
+if not webfaction:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db2.sqlite3'),
+        },
+    }
+    CSRF_COOKIE_SECURE = False
 STATIC_URL = '/static/static/'
 MEDIA_URL = '/static/media/'
 STATICFILES_DIRS = (
@@ -110,8 +120,11 @@ STATICFILES_DIRS = (
 STATIC_ROOT= os.path.join(BASE_DIR, '../../praisingvoices_static/static')
 MEDIA_ROOT = os.path.join(BASE_DIR, '../../praisingvoices_static/media')
 #MEDIA_ROOT = os.path.join(STATIC_ROOT, 'media')
-STATIC_ROOT = '/home/jchinte/webapps/praisingvoices_static/static'
-
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATICFILES_DIRS = (
+    '/home/jchinte/webapps/praisingvoices_static/static' if webfaction else '/Users/jchinte/webapps/praisingvoices_static/static',
+    )
+print(STATIC_ROOT)
 tdir = [os.path.join(BASE_DIR, 'templates'),]
 DEBUG = True
 td = True
@@ -191,5 +204,6 @@ SERVER_EMAIL='jchinte@praisingvoices.org'
 ACCOUNT_ACTIVATION_DAYS=7
 REGISTRATION_AUTO_LOGIN = True
 REGISTRATION_ADMINS=[('jchinte','jchinte@praisingvoices.org'),]
+REGISTRATION_FORM='registration_pv.forms.PVRegistrationForm'
 ADMINS=[('jchinte','jchinte@praisingvoices.org'),]
 FILE_UPLOAD_PERMISSIONS=0o644
