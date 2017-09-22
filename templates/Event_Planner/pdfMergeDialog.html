@@ -3,16 +3,17 @@
     <div class="modal-header">
       <span class="close">&times;</span>
       <span><h2>Choose your files...</h2></span>
-      <span><button class="clearBtn">clear</button>
+      <!--span><button class="clearBtn">clear</button-->
         <select id="selectset">
          <option>What kind of music?</option>
 	 <option value="melody">melody</option>
 	 <option value="harmony">harmony</option>
 	 <option value="cantor">cantor</option>
 	 <option value="piano">piano</option>
-	 <option value="guitar">guitar</option>
+	 <option value="all">everything</option>
+	 <option value="none">nothing</option>
 	</select>
-        <button class="selectAllBtn">get everything</button>
+        <!--button class="selectAllBtn">get everything</button-->
       </span>
     </div>
     <div class="modal-body">
@@ -267,9 +268,16 @@ $('.selectAllBtn').click(function(){
   activate($('.thumbInactive'))
 });
 $('#selectset').change(function(event){
-  deactivate($('.thumbActive'));
-  activateIfExists(event.target.value);
-  
+  if (event.target.value=='none'){
+    deactivate($('.thumbActive'));
+  }
+  else if (event.target.value=='all'){
+    activate($('.thumbInactive'));
+  }
+  else {
+    deactivate($('.thumbActive'));
+    activateIfExists(event.target.value);
+  }
 });
 $(document).ready(function(){
 
