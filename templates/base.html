@@ -52,7 +52,7 @@
 	{% else %}
 	    <div class="fullHeader noPrint">
 		{% if user.is_authenticated %}
-    		<p>Welcome, {% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}. <span id="greeting"></span> <a href="{% url 'django.contrib.auth.views.logout_then_login' %}">logout</a></p>
+    		<p>Hey, {% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}. <span id="greeting"></span> <a href="{% url 'django.contrib.auth.views.logout_then_login' %}">logout</a></p>
     	{% else %}
     		<p>Welcome. Please <a href="{% url "login" %}?next={{ request.build_absolute_uri }}">log in</a>.</p>
 		{% endif %}
@@ -100,7 +100,7 @@
         'Dudester!',
         'Alrighty then!',
         'Hola',
-        'Guten Targ',
+        'Guten Tag',
         'Oh Hiii',
         'Oh hi there',
         'Howdy',
@@ -114,8 +114,23 @@
         'What\'s up?',
         'What\'s up bitches?',
         'Good day to you!',
-        'A Hoy Hoy!'
-        ],
+        'A Hoy Hoy!',
+		'‘Ello gov\'nor!',
+		'Top of the mornin’ to ya!',
+		'What’s crackin’?',
+		'‘Sup homeslice?',
+		'This call may be recorded for training purposes.',
+		'Howdy howdy howdy!',
+		'How does a lion greet the other animals in the field? A: Pleased to eat you.',
+		'Hello, my name is Inigo Montoya.',
+		'I\'m Batman.',
+		'At least we meet for the first time for the last time!',
+		'Hello, who\'s there, I\'m talking.',
+		'You know who this is.',
+		'Yo!',
+		'Whaddup.',
+		'Greetings and salutations!'
+	    ],
         greet: function() {
             var randomNumber = Math.floor( Math.random() * this.greetings.length );
             return this.greetings[ randomNumber ];
