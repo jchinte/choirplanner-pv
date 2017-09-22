@@ -52,7 +52,7 @@
 	{% else %}
 	    <div class="fullHeader noPrint">
 		{% if user.is_authenticated %}
-    		<p>Welcome, {% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}. <span id="greeting" /> <a href="{% url 'django.contrib.auth.views.logout_then_login' %}">logout</a></p>
+    		<p>Welcome, {% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}. <span id="greeting"></span> <a href="{% url 'django.contrib.auth.views.logout_then_login' %}">logout</a></p>
     	{% else %}
     		<p>Welcome. Please <a href="{% url "login" %}?next={{ request.build_absolute_uri }}">log in</a>.</p>
 		{% endif %}
