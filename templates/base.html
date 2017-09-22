@@ -27,13 +27,13 @@
 
 		{% if user.is_authenticated %}
 			<h1>
-				Planner - {{ user.username }}
+				Planner - {% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}
 			</h1>
 			<a href="{% url 'django.contrib.auth.views.logout_then_login' %}" data-icon="sign-out" data-ajax="false" class="ui-btn-right">Sign out</a>
 			
 		{% else %}
 			<h1>
-				Planner - {{ user.username }}
+				Planner - {% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}
 			</h1>	
 			<a href="{% url "login" %}?next={{ request.build_absolute_uri }}" data-icon="sign-in" data-ajax="false" class="ui-btn-right">Sign in</a>
 		{% endif %}
@@ -52,7 +52,7 @@
 	{% else %}
 	    <div class="fullHeader noPrint">
 		{% if user.is_authenticated %}
-    		<p>Welcome, {{ user.username }}. Thanks for logging in.  <a href="{% url 'django.contrib.auth.views.logout_then_login' %}">logout</a></p>
+    		<p>Welcome, {% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}. <span id="greeting" /> <a href="{% url 'django.contrib.auth.views.logout_then_login' %}">logout</a></p>
     	{% else %}
     		<p>Welcome. Please <a href="{% url "login" %}?next={{ request.build_absolute_uri }}">log in</a>.</p>
 		{% endif %}
