@@ -11,6 +11,7 @@ from Event_Planner.formsfields import ParticipantForm, ActivityForm, EventForm
 from django.contrib.auth.decorators import permission_required, login_required
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
+from django.core.cache import cache
 from django.forms.models import modelformset_factory, modelform_factory,\
     ModelForm
 from django.forms import HiddenInput
@@ -231,6 +232,18 @@ class ActivityCreateView(CreateView):
 
 @cache_page (60*15)
 def EventPowerpointView2(request, pk, filename):
+    cachefname = filename.replace(" ", "_")
+    fdata = cache.get(cachefname, None)
+    if fdata is not None:
+        response = FileResponse(open(fdata, "rb"))
+        #response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.presentationml.presentation')
+        if (filename==None or filename == "" ):
+            filename = Event.objects.get(id=pk).title + '.pptx'
+        response['Content-Disposition'] = 'attachment; filename="' + filename + '"'
+        response['Content-Type']='application/vnd.openxmlformats-officedocument.presentationml.presentation'
+        response['Content-Length'] = os.path.getsize(fdata)
+        return response
+
     #get all items related to event
     songs = SongSegment.objects.filter(event=pk).order_by("order")
     #TODO: segment_queryset = Segment.objects.select_subclasses().order_by('order')
@@ -272,9 +285,10 @@ def EventPowerpointView2(request, pk, filename):
         if (filename==None or filename == "" ):
             filename = Event.objects.get(id=pk).title + '.pptx'
         response['Content-Disposition'] = 'attachment; filename="' + filename + '"'
-        response['content_type']='application/vnd.openxmlformats-officedocument.presentationml.presentation'
-        response['Content_Length'] = os.path.getsize(newFile)
+        response['Content-Type']='application/vnd.openxmlformats-officedocument.presentationml.presentation'
+        response['Content-Length'] = os.path.getsize(newFile)
         #response.write(newFile)
+        cache.set(cachefname, newFile)
 
         return response
 
@@ -766,6 +780,6 @@ def RawPDFView(request, event_id):
         response = HttpResponse(combinedFile, content_type='application/pdf')
         filename = Event.objects.get(id=event_id).title + '.pdf'
         response['Content-Disposition'] = 'attachment; filename="' + filename + '"'
-        response['Content_Length'] = len(combinedFile)
+        response['Content-Length'] = len(combinedFile)
         return response
         #return HttpResponse(json.dumps(pdfSongs, ensure_ascii=False))
