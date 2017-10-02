@@ -9,7 +9,7 @@
 <p>
 <h1>{{ event.title }}</h1>
 <h2>{{ event.date }}</h2>
-<table id="detail">
+<table id="detail" class="responsive">
 	<thead>
         <tr>
 	        <th />
@@ -33,16 +33,24 @@
 					<br/><a href="{{ s.songsegment.song.get_absolute_url }}">
 						{{ s.songsegment.song.title }}
 					</a>
-			<div data-role="collapsible" class="noPrint fallback"> 
-			  <h4>Documents 
-</h4>	{% if perms.Event_Planner.add_event %}
-<input type="checkbox" class="togglebox" id="edit{{ s.songsegment.id }}" data-role="none" /><label class="segEditIconLabel" for="edit{{ s.songsegment.id }}" id="editicon{{ s.songsegment.id }}" class="segEditLabel" data-role="none"><span><img class="segEditIcon" src="{% static "img/pencil2.png" %}" /></span></label>{% endif %}
+			<div data-role="collapsible" class="noPrint fallback documents"> 
+{% if perms.Event_Planner.add_event %}
+<input type="checkbox" class="togglebox" id="edit{{ s.songsegment.id }}" data-role="none" />{% endif %}
+{% if perms.Event_Planner.add_event %}
+            {% if flavour == "mobile" %}
+<label class="segEditIconLabel" for="edit{{ s.songsegment.id }}" id="editicon{{ s.songsegment.id }}" class="segEditLabel" data-role="none"><span><img class="segEditIcon" src="{% static "img/pencil2.png" %}" /></span></label>{% endif %}{% endif %}
 
+			  <h4>Documents
+{% if perms.Event_Planner.add_event %}
+            {% if flavour != "mobile" %}
+<label class="segEditIconLabel" for="edit{{ s.songsegment.id }}" id="editicon{{ s.songsegment.id }}" class="segEditLabel" data-role="none"><span><img class="segEditIcon" src="{% static "img/pencil2.png" %}" /></span></label>{% endif %}{% endif %}
+ 
+</h4>	
 					{% if s.songsegment.song.files %}
 	<ul>
     {% for file in s.songsegment.song.files %}
         <li>
-	  <span class="clearfix">
+	  <span class="clearfix songfile">
             {% if perms.Event_Planner.add_event %}<span class="deletefilebutton" deletefrom="{% url 'rest_songfile_view' file.id %}">&times;</span>{% endif %}
             {% if flavour == "mobile" %}
         <a href="{{ file.file.url }}" class="noPrint ui-btn ui-btn-inline" data-ajax="false">download</a> 
@@ -84,14 +92,21 @@
 	{% if perms.Event_Planner.add_event %}
 <li class="newfileform">
      <form id="form{{ s.songsegment.song.id }}" enctype="multipart/form-data" method="post" action="{% url 'song_upload_view' s.songsegment.song.id %}"> 
-{% csrf_token %} <input class="ev_fileinput" name="file" type="file" /><input name="song" value="{{ s.songsegment.song.id }}" type="hidden" hidden>
-<input maxlength="100" name="filetype_list" type="text" hidden /><input id="submit{{ s.songsegment.song.id }}" type="submit" value="Upload" hidden />
+{% csrf_token %} <input class="ev_fileinput" name="file" type="file" /><input name="song" value="{{ s.songsegment.song.id }}" data-role="none" type="hidden" hidden>
+<input maxlength="100" name="filetype_list" type="text" data-role="none" hidden /><input id="submit{{ s.songsegment.song.id }}" type="submit" value="Upload" hidden data-role="none"/>
 </form></li>
 {% endif %}
     </ul>
     
 {% else %}
 <p> no files available. </p>
+	{% if perms.Event_Planner.add_event %}
+<ul><li class="newfileform">
+     <form id="form{{ s.songsegment.song.id }}" enctype="multipart/form-data" method="post" action="{% url 'song_upload_view' s.songsegment.song.id %}"> 
+{% csrf_token %} <input class="ev_fileinput" name="file" type="file" /><input name="song" value="{{ s.songsegment.song.id }}" type="hidden" hidden>
+<input maxlength="100" name="filetype_list" type="text" hidden /><input id="submit{{ s.songsegment.song.id }}" type="submit" value="Upload" hidden />
+</form></li></ul>
+{% endif %}
 {% endif %}
 {% if flavour == "mobile" %}
 <a href="{{ s.songsegment.song.get_absolute_url }}">
@@ -202,7 +217,7 @@ $(document).one("pagebeforeshow", f);
 function remove(n){
   var deleteurl = this.getAttribute("deletefrom");
   var currentTag = this.parentNode;
-  if (!(typeof n===undefined)){ 
+  if (!(typeof n===undefined) && !n.target){ 
       console.log(n);
       currentTag = n;
   }

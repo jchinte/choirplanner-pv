@@ -85,7 +85,7 @@ class SongFile(models.Model):
     
     def __str__(self):
         s = (str(self.file.name)).split('/')
-        return unicode(s[len(s)-1])
+        return smart_text(s[len(s)-1])
     def __thumbnail(self):
         filename = path.splitext(self.file.path)
         if filename[1]=='.pdf':

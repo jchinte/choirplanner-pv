@@ -2,25 +2,22 @@
 
 {% block main %}
 {% if event_list %}
-    <table>
+    <table class="responsive">
     {% for e in event_list|dictsortreversed:"date" %}
         <tr>
-        	<th><a href="{{ e.get_absolute_url }}">{{ e.title }}</a></th>
-        	<td><a href="{{ e.get_absolute_url }}">{{ e.date }}</a></td>
-        	{% if perms.Event_Planner.change_event %}
-        		<td><a href="{% url 'event_update_view' e.id %}" data-ajax="false">edit</a></td>
-  			{% endif %}
-        	{% if perms.Event_Planner.delete_event %}
-          	    <td><a href="{% url 'event_delete_view' e.id %}">delete</a></td>
-  			{% endif %}
+			<th><a href="{{ e.get_absolute_url }}">{{ e.title }}</a>
+				{% if perms.Event_Planner.change_event %}
+				<br /><a href="{% url 'event_update_view' e.id %}" class="ui-btn ui-icon-edit ui-btn-inline " data-ajax="false">edit</a>
+			<br /><a href="{% url 'event_delete_view' e.id %}" class="ui-btn ui-icon-delete ui-btn-inline ">delete</a>{% endif %} </th>
+        	<td data-th="Date:"><a href="{{ e.get_absolute_url }}">{{ e.date }}</a></td>
           {% if user.is_authenticated %}
   			{% if e.has_ppt %}
-  				<td><a  class = "noPrint" href="{% url 'event_powerpoint_view2' e.id e.get_pptx_name %}" data-ajax="false" download>Powerpoint</a></td>
+  				<td><a  class = "noPrint ui-btn ui-btn-inline" href="{% url 'event_powerpoint_view2' e.id e.get_pptx_name %}" data-ajax="false" download>Powerpoint</a></td>
   			{% else %}
   				<td/>
   			{% endif %}
 
-  			    <td><button class = "noPrint openSelectPDFsDialog" filename="{{ e.title }}.pdf" eventid="{{ e.id }}" dataurl="{% url 'json_pdf_view' e.id %}" eventurl="{% url 'raw_pdf_view' e.id %}" >combined PDF</button></td>
+  			    <td><button class = "noPrint openSelectPDFsDialog" filename="{{ e.title }}.pdf" eventid="{{ e.id }}" dataurl="{% url 'json_pdf_view' e.id %}" eventurl="{% url 'raw_pdf_view' e.id %}" >PDF</button></td>
         	  {% endif %}
         </tr>
     {% endfor %}

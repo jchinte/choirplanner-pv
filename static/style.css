@@ -1,12 +1,15 @@
 body {
   background-color: #FFF;
-  font-size: 1.0em;
+  font-size: 1.3em;
   font-family: "Lucida Grande", Tahoma, Helvetica, sans-serif;
   color: #564b47;
   padding: 5px;
   margin: 0px;
   text-align: center;
   padding-bottom: 50px;
+}
+.documents {
+    width: 100%;
 }
 .fullFooter {
 	background: #eee;
@@ -54,9 +57,15 @@ div {
   padding: 0;
   margin: 0;
 }
+div.mainbody {
+  text-align: center;
+}
 
 table {
-  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  width: 80%;
+  /*max-width: 800px;*/
   border: 1px solid #DDDDB2;
   border-spacing: 0;
   border-collapse: collapse;
@@ -119,17 +128,20 @@ table#detail tbody tr:not(:last-child) {
 	border-bottom: 1px solid #ddd;
 }
 @media screen and (max-width: 600px){
-	table#detail caption {
+        body {
+	    font-size: 1em;
+	}
+	table.responsive caption {
 		background-image: none;
 	}
-	table#detail thead {
+	table.responsive thead {
 		display: none;
 	}
-	table#detail tbody td {
+	table.responsive tbody td {
 		display: block;
 		padding: .6rem;
 	}
-	table#detail tbody tr td:first-child {
+	table.responsive tbody tr td:first-child {
 		background: #333;
 		color: #fff;
 	}
@@ -138,6 +150,13 @@ table#detail tbody tr:not(:last-child) {
 		font-weight: bold;
 		display: inline-block;
 		width: 6rem;
+	}
+	table {
+	        width: 95%;
+	        /*max-width: 95%;*/
+	}
+	audio { 
+	    max-width: 50%; 
 	}
 }
 
@@ -536,6 +555,8 @@ span.label {
     padding: 3px;
     color: #EEEEEE;
     box-shadow: 4px 2px;
+    white-space: nowrap;
+    float: left;
 }
 .segEditIconLabel {
     height:1em;
@@ -565,6 +586,7 @@ span.label {
   display:none;
   background: #EE2222;
   border-radius: 11px;
+  float: left;
 }
 .addtagbutton{
     display:none;
@@ -573,8 +595,14 @@ span.label {
     padding: 3px;
     color: #EEEEEE;
     box-shadow: 4px 2px;
+    float: left;
 }
-.togglebox:checked + .segEditIconLabel {
+.togglebox:checked ~ .segEditIconLabel {
+    margin: 4px 2px 0px 0px;
+    padding: none;
+    box-shadow: none;
+}
+.togglebox:checked ~ h4 > .segEditIconLabel {
     margin: 4px 2px 0px 0px;
     padding: none;
     box-shadow: none;
@@ -596,4 +624,18 @@ span.label {
 }
 .togglebox:checked ~ul > li.newfileform {
     display:inline;
+}
+.songfile {
+    text-align: left;
+    margin-left: none;
+}
+li {
+    list-style: none;
+}
+.ev_fileinput {
+    float: left;
+}
+
+ul {
+    -webkit-padding-start: 4px;
 }

@@ -79,9 +79,9 @@ MIDDLEWARE_CLASSES = (
     'django_mobile.middleware.MobileDetectionMiddleware',
     'django_mobile.middleware.SetFlavourMiddleware',
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
-    'django.middleware.cache.UpdateCacheMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.cache.FetchFromCacheMiddleware',
+#    'django.middleware.cache.UpdateCacheMiddleware',
+#    'django.middleware.common.CommonMiddleware',
+#    'django.middleware.cache.FetchFromCacheMiddleware',
 )
 
 ROOT_URLCONF = 'music_planner0.urls'
@@ -212,13 +212,13 @@ TEMPLATE_LOADERS = TEMPLATES[0]['OPTIONS']['loaders']
 EMAIL_HOST='smtp.webfaction.com'
 EMAIL_PORT=587
 EMAIL_USE_TLS=True
-EMAIL_HOST_USER='praisingvoices'
-EMAIL_HOST_PASSWORD='liltheo1025'
+EMAIL_HOST_USER='jchinte'
+EMAIL_HOST_PASSWORD='>vRDcEBu+H@L%7?v'
 DEFAULT_FROM_EMAIL='praisingvoices@praisingvoices.org'
 SERVER_EMAIL='praisingvoices@praisingvoices.org'
 ACCOUNT_ACTIVATION_DAYS=7
 REGISTRATION_AUTO_LOGIN = True
 REGISTRATION_ADMINS=[('jchinte','jchinte@gmail.com'),]
 REGISTRATION_FORM='registration_pv.forms.PVRegistrationForm'
-ADMINS=[('jchinte','jchinte@praisingvoices.org'),]
+ADMINS=[('jchinte','jchinte@gmail.com'),]
 FILE_UPLOAD_PERMISSIONS=0o644

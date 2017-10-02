@@ -30,7 +30,7 @@ from django.views.generic.list import ListView
 from django.http import HttpResponse, HttpResponseServerError, FileResponse
 from datetime import datetime, timedelta
 import django_mobile
-from SongManager.models import SongFile
+from SongManager.models import SongFile, Song
 import music_planner0.settings as settings
 import os.path
 from py4j.java_gateway import JavaGateway, GatewayParameters
@@ -241,7 +241,7 @@ def EventPowerpointView2(request, pk, filename):
             filename = Event.objects.get(id=pk).title + '.pptx'
         response['Content-Disposition'] = 'attachment; filename="' + filename + '"'
         response['Content-Type']='application/vnd.openxmlformats-officedocument.presentationml.presentation'
-        response['Content-Length'] = os.path.getsize(fdata)
+        #response['Content-Length'] = os.path.getsize(fdata)
         return response
 
     #get all items related to event
@@ -280,13 +280,15 @@ def EventPowerpointView2(request, pk, filename):
             print(":",l)
             if l.startswith(b'target:'):
                 newFile = l.split()[1]
+        print("output: " + str(output))
+        print("file: " + str(newFile))
         response = FileResponse(open(newFile, "rb"))
         #response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.presentationml.presentation')
         if (filename==None or filename == "" ):
             filename = Event.objects.get(id=pk).title + '.pptx'
         response['Content-Disposition'] = 'attachment; filename="' + filename + '"'
         response['Content-Type']='application/vnd.openxmlformats-officedocument.presentationml.presentation'
-        response['Content-Length'] = os.path.getsize(newFile)
+        #response['Content-Length'] = os.path.getsize(newFile)
         #response.write(newFile)
         cache.set(cachefname, newFile)
 
@@ -470,6 +472,10 @@ class TemplateCreateView(EventCreateView):
             for segment in segments:
                 segment.pk=None
                 segment.id=None
+                if str(segment.title) == 'Announcements':
+                    announcement = Song(title = "Announcements " + str(form.cleaned_data['date']), first_line = 'Announcements for ' + form.cleaned_data['title'])
+                    announcement.save()
+                    segment.song = announcement
                 segment.event = self.object
                 segment.save()
         return response

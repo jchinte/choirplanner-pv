@@ -26,7 +26,7 @@ from django.views.decorators.http import require_http_methods
 
 class SearchQueryMixin(object):
     def search(self, searchTerms, opts, objects):
-        cacheString = "search"+str(searchTerms)+str(opts)+str(objects)
+        cacheString = ("search"+str(searchTerms)+str(opts)+str(objects)).replace(" ", "_")
         qset = cache.get(cacheString)
         if qset is not None:
             return qset
