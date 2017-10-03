@@ -151,7 +151,8 @@
 	</tbody>
 </table>
 </p>
-<a  class = "noPrint" href="{% url 'event_powerpoint_view2' event.id event.get_pptx_name %}" download>Generate Powerpoint</a>
+	{% if perms.Event_Planner.add_event %}
+<a  class = "noPrint" href="{% url 'event_powerpoint_view2' event.id event.get_pptx_name %}" download>Generate Powerpoint</a>{% endif %}
 {% if flavour == "mobile" %}
 <script>
 

@@ -10,7 +10,7 @@
 				<br /><a href="{% url 'event_update_view' e.id %}" class="ui-btn ui-icon-edit ui-btn-inline " data-ajax="false">edit</a>
 			<br /><a href="{% url 'event_delete_view' e.id %}" class="ui-btn ui-icon-delete ui-btn-inline ">delete</a>{% endif %} </th>
         	<td data-th="Date:"><a href="{{ e.get_absolute_url }}">{{ e.date }}</a></td>
-          {% if user.is_authenticated %}
+{% if perms.Event_Planner.change_event %}
   			{% if e.has_ppt %}
   				<td><a  class = "noPrint ui-btn ui-btn-inline" href="{% url 'event_powerpoint_view2' e.id e.get_pptx_name %}" data-ajax="false" download>Powerpoint</a></td>
   			{% else %}
