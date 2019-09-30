@@ -3,7 +3,7 @@
 {% block main %}
 {% if event_list %}
     <table class="responsive">
-    {% for e in event_list|dictsortreversed:"date" %}
+    {% for e in event_list %}
         <tr>
 			<th><a href="{{ e.get_absolute_url }}">{{ e.title }}</a>
 				{% if perms.Event_Planner.change_event %}
@@ -16,9 +16,9 @@
   			{% else %}
   				<td/>
   			{% endif %}
+        	  {% endif %}
 
   			    <td><button class = "noPrint openSelectPDFsDialog" filename="{{ e.title }}.pdf" eventid="{{ e.id }}" dataurl="{% url 'json_pdf_view' e.id %}" eventurl="{% url 'raw_pdf_view' e.id %}" >PDF</button></td>
-        	  {% endif %}
         </tr>
     {% endfor %}
     </table>

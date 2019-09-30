@@ -23,7 +23,7 @@
 {% for s in event.segment_set.all|dictsort:"order" %}
 	{% if s.visible %}
 	<tr>
-		<th>
+		<th class="rotate">
 			{{ s.title }}
 		</th>
 		<td data-th="Title">
@@ -214,6 +214,9 @@ $(document).one("pagebeforeshow", f);
 	</div>
 {% endif %}
 <script>
+$(document).ready(function(){
+  //$('.rotate').css('height', $('.rotate').width());
+});
 {% include 'csrf.js' %}
 function remove(n){
   var deleteurl = this.getAttribute("deletefrom");

@@ -28,13 +28,14 @@ from Event_Planner.formsfields import EventTemplateForm,\
     TemplateChoiceForm, EventCreateForm, AjaxActivityForm
 from django.views.generic.list import ListView
 from django.http import HttpResponse, HttpResponseServerError, FileResponse
-from datetime import datetime, timedelta
+from datetime import timedelta
+from django.utils import timezone as datetime
 import django_mobile
 from SongManager.models import SongFile, Song
 import music_planner0.settings as settings
 import os.path
 from py4j.java_gateway import JavaGateway, GatewayParameters
-from subprocess import check_output
+from subprocess import check_output, call
 
 class BaseEventListView(ListView):
     context_object_name="event_list"
@@ -71,7 +72,7 @@ class TemplateListView(BaseEventListView):
 
 class EventListView(BaseEventListView):
     def get_queryset(self):
-        return Event.objects.filter(is_template=False).exclude(date__lt=datetime.now() - timedelta(hours=24))
+        return Event.objects.filter(is_template=False).exclude(date__lt=datetime.now() - timedelta(hours=24)).order_by('date')
 
 class EventArchiveView(BaseEventListView):
 
@@ -82,7 +83,7 @@ class EventArchiveView(BaseEventListView):
                         })
         return context
     def get_queryset(self):
-        return Event.objects.filter(is_template=False)
+        return Event.objects.filter(is_template=False).order_by('-date')
 
 class OrderUpdateView(JSONResponseMixin, BaseUpdateView):
     model=Event
@@ -271,6 +272,7 @@ def EventPowerpointView2(request, pk, filename):
         #for i in range(len(pptFilenames)):
         #    javaFilenames[i] = pptFilenames[i]
         #newFile = gateway.entry_point.mergePPTsToFile(javaFilenames)
+        call(['/usr/bin/tar', 'xzf', '/home/jchinte/newpptMerge.tar.gz', '-C', '/home/jchinte'])
         command =  ['/home/jchinte/bin/newpptMerge', os.path.join(settings.MEDIA_ROOT, 'songs/')] + pptFilenames
         output = check_output(command)
         ols = output.splitlines()

@@ -5,6 +5,7 @@ from django.shortcuts import redirect
 from django.template import Context, loader
 #from django.template.context import RequestContext
 from SongManager.models import Song, SongFile
+from Event_Planner.models import SongSegment
 from SongManager.formsfields import SongFileForm, SongForm, SearchForm
 from django import http
 from django.http import Http404, HttpResponse
@@ -84,6 +85,9 @@ class SongDetailView(DetailView):
     
     def get_context_data(self, **kwargs):
         context = super(SongDetailView, self).get_context_data(**kwargs)
+        context.update({'events' :  list(map(
+            lambda seg: seg.event, SongSegment.objects.filter(song_id=self.object.id)))})
+        print(context)
         if self.request.is_ajax():
             context.update({
                             'base': 'base.html'
