@@ -1,5 +1,7 @@
 # Create your views here.
 from __future__ import unicode_literals
+from __future__ import print_function
+from collections import OrderedDict
 from django.db.models import Q
 from django.shortcuts import redirect
 from django.template import Context, loader
@@ -8,22 +10,38 @@ from SongManager.models import Song, SongFile
 from Event_Planner.models import SongSegment
 from SongManager.formsfields import SongFileForm, SongForm, SearchForm
 from django import http
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, HttpResponseBadRequest
 from django.views.generic import DeleteView, DetailView, UpdateView, ListView, CreateView
 from django.views.generic.edit import SingleObjectTemplateResponseMixin, BaseUpdateView
 #from django.utils import simplejson as json
 import json
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required, permission_required
 from django.utils.decorators import method_decorator
 from django.core import serializers
 from SongManager.models import Composer, FileType, Tag
-from django.utils.encoding import smart_text
 from django.core.cache import cache
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.cache import cache_page
+from SongManager.youtube import youtube_search
+import rest_framework
+import sys
+
+#rest api
+#from rest_framework.generics import CreateAPIView
+from rest_framework.viewsets import ViewSet, ModelViewSet, ReadOnlyModelViewSet
+from rest_framework.response import Response
+from SongManager.serializers import SongFileSerializer, SongSerializer, TagSerializer, FileTypeSerializer, SongListSerializer
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly, IsAdminUser, DjangoModelPermissions
+from rest_framework.decorators import action
+from rest_framework import status
+
 
 #mixins
+
+def is_ajax(request):
+    return request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
 
 class SearchQueryMixin(object):
     def search(self, searchTerms, opts, objects):
@@ -88,7 +106,7 @@ class SongDetailView(DetailView):
         context.update({'events' :  list(map(
             lambda seg: seg.event, SongSegment.objects.filter(song_id=self.object.id)))})
         print(context)
-        if self.request.is_ajax():
+        if is_ajax(self.request):
             context.update({
                             'base': 'base.html'
                             })
@@ -100,10 +118,25 @@ class SongDetailView(DetailView):
                         'page_id':'SongDetail'+str(self.object.id)
                         })
         t = loader.get_template('SongManager/files.html')
-        c = {
-            'files': SongFile.objects.filter(song__pk=self.object.id),
-            'youtube': True
-        }
+        
+        try:
+            cache_name = 'youtube_'+'_'.join(self.object.search_terms().split())
+            cached_youtube = cache.get(cache_name)
+            if cached_youtube:
+                print("cache hit: {0}".format(cache_name), file=sys.stderr)
+            else:
+                print("cache miss: {0}".format(cache_name), file=sys.stderr)
+            c = {
+                'files': SongFile.objects.filter(song__pk=self.object.id),
+                'youtube': True,
+                'videoIds': youtube_search(str(self.object.search_terms())) if cached_youtube is None else cached_youtube
+            }
+            cache.set(cache_name, c['videoIds'], 24*60*8)
+        except:
+            c = {
+                'files': SongFile.objects.filter(song__pk=self.object.id),
+                'youtube': False
+            }
         c.update({'song':self.object})
         filedata = t.render(c)
         context.update({'files': filedata })
@@ -130,7 +163,7 @@ class SongUploadView(JSONResponseMixin, SingleObjectTemplateResponseMixin, BaseU
     def render_to_response(self, context):
         if not self.request.POST:
             raise Http404
-        xhr = self.request.is_ajax() or 'xhr' in self.request
+        xhr = is_ajax(self.request) or 'xhr' in self.request
         form = SongFileForm(self.request.POST, self.request.FILES)
         context.update({
                      'files': SongFile.objects.filter(song__pk=self.object.id),
@@ -401,7 +434,7 @@ def JSONFileTypeListView(request):
         filetypes = FileType.objects.all()
     filetype_list = []
     for filetype in filetypes:
-        filetype_list.append(smart_text(filetype))
+        filetype_list.append(smart_str(filetype))
         
     response = HttpResponse(json.dumps(filetype_list,  ensure_ascii=False))
     return response
@@ -417,7 +450,7 @@ def JSONComposerListView(request):
         composers = Composer.objects.all()
     composer_list = []
     for composer in composers:
-        composer_list.append(smart_text(composer))
+        composer_list.append(smart_str(composer))
         
     response = HttpResponse(json.dumps(composer_list,  ensure_ascii=False))
     return response
@@ -427,13 +460,13 @@ def REST_songfile_view(request, songfile_id):
     response = HttpResponse(status=405)
     if request.method == 'GET':
         fts = FileType.objects.filter(songfile__pk=songfile_id)
-        typenames = list(map(lambda obj: smart_text(obj.type), fts))
+        typenames = list(map(lambda obj: smart_str(obj.type), fts))
         response = HttpResponse(json.dumps(typenames, ensure_ascii=False))
         return response
     elif request.method == 'POST':
         pass
     elif request.method == 'DELETE':
-        obj.delete();
+        obj.delete()
         return HttpResponse(status=204)
     elif request.method == 'PUT':
         pass
@@ -464,3 +497,59 @@ def REST_songfile_filetype_view(request, songfile_id, songtype):
     except FileType.DoesNotExist:
         raise Http404("File type does not exist.")
     return HttpResponse(status=208)
+
+class SongFileAPIViewSet(ModelViewSet):
+    permission_classes = [DjangoModelPermissions]
+    serializer_class = SongFileSerializer
+    queryset = SongFile.objects.all()
+    
+    # def list(self, request):
+    #     return rest_framework.response.Response("Get API")
+
+    def create(self, request):
+        print("in create for songfile")
+        print(request.data)
+        return super().create(request)
+    def update(self, request, *args, **kwargs):
+        print("in update")
+        return super().update(request, *args, **kwargs)
+
+class SongAPIViewSet(ModelViewSet):
+    permission_classes = [DjangoModelPermissions]
+    serializer_class = SongSerializer
+    queryset = Song.objects.all()
+
+    @method_decorator(cache_page(60*60*2))
+    def list(self, request, *args, **kwargs):
+        #serializer = SongSerializer(self.queryset, many=True, fields = ['id', 'title', 'composers', 'tags'])
+        self.serializer_class = SongListSerializer
+        res = super().list(request, *args, **kwargs)
+        if hasattr(res, 'data'):
+            rd = OrderedDict()
+            rd.update({
+                'results': res.data, 
+                'can_create_song':request.user.has_perm('song.can_create_song')
+            })
+            res.data = rd
+        return res
+        return super().list(request, *args, **kwargs)
+    def retrieve(self, request, pk=None, *args, **kwargs):
+        res = super().retrieve(request, pk, *args, **kwargs)
+        res.data.update({'can_delete_song': request.user.has_perm('can_delete_song')})
+        return res
+
+    def create(self, request, *args, **kwargs):
+        res = super().create(request, *args, **kwargs)
+        res.data.update({'can_delete_song': request.user.has_perm('can_delete_song')})
+        return res
+
+class TagAPIViewSet(ModelViewSet):
+    permission_classes = [DjangoModelPermissions]
+    serializer_class = TagSerializer
+    queryset = Tag.objects.all()
+
+
+class FileTypeAPIViewSet(ModelViewSet):
+    permission_classes = [DjangoModelPermissions]
+    serializer_class = FileTypeSerializer
+    queryset = FileType.objects.all()

@@ -1,6 +1,10 @@
 {% extends base %}
+{% load tz %}
+{% get_current_timezone as TIME_ZONE %}
 
+{% localtime on %}
 {% block main %}
+{{ TIME_ZONE }}
 {% if event_list %}
     <table class="responsive">
     {% for e in event_list %}
@@ -41,5 +45,5 @@
 {% endif %}
 {% include "Event_Planner/pdfMergeDialog.html" %}
 {% endblock %}
-
+{% endlocaltime %}
 href="{% url 'raw_pdf_view' e.id %}" data-ajax="false" download

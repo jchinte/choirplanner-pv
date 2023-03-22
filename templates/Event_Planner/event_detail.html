@@ -20,7 +20,7 @@
 	</thead>
 	<tbody>
 	
-{% for s in event.segment_set.all|dictsort:"order" %}
+{% for s in event.segments.all|dictsort:"order" %}
 	{% if s.visible %}
 	<tr>
 		<th class="rotate">
@@ -46,9 +46,9 @@
 <label class="segEditIconLabel" for="edit{{ s.songsegment.id }}" id="editicon{{ s.songsegment.id }}" class="segEditLabel" data-role="none"><span><img class="segEditIcon" src="{% static "img/pencil2.png" %}" /></span></label>{% endif %}{% endif %}
  
 </h4>	
-					{% if s.songsegment.song.files %}
+					{% if s.songsegment.song.files.all %}
 	<ul>
-    {% for file in s.songsegment.song.files %}
+    {% for file in s.songsegment.song.files.all %}
         <li>
 	  <span class="clearfix songfile">
             {% if perms.Event_Planner.add_event %}<span class="deletefilebutton" deletefrom="{% url 'rest_songfile_view' file.id %}">&times;</span>{% endif %}

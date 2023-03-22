@@ -47,7 +47,7 @@ class Serializer(BaseSerializer):
             for field in obj._meta.local_fields:
                 attname = field.attname
                 if field.serialize:
-                    if field.rel is None:
+                    if field.remote_field is None:
                         if attname not in self.excludes:
                             if not self.fields or attname in self.fields:
                                 self.handle_field(obj, field)

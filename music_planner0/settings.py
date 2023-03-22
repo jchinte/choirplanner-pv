@@ -17,44 +17,43 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.6/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-#SECRET_KEY = '1)!!b1c-(apmbv15!j8+0(!p2evpm0#o7izhx-q4n-#e4cmaul'
+
 SECRET_KEY = '%eer7)u5#$v&xdlgwxjd12nq$g#y@%q9odd))#+%n-xetb)-ym'
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-td = False
-tdir = []
-
-
+if DEBUG:
+    #ALLOWED_HOSTS=['http://localhost:3000']
+    # CORS_ALLOW_ALL_ORIGINS = True
+    CORS_ALLOWED_ORIGINS = (
+        'http://localhost:8000',
+        'http://localhost:3000',
+        'http://127.0.0.1:8000',
+        'http://127.0.0.1:3000',
+        'http://192.168.1.245:3000',
+        'https://praisingvoices.org',
+        'http://108.65.170.64:8000',
+    )
+CSRF_TRUSTED_ORIGINS = ["https://praisingvoices.org", "https://www.praisingvoices.org"]
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_SSL_REDIRECT = True
-SESSION_COOKIE_SECURE = True
-
-
-CSRF_COOKIE_SECURE = True
-
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+#SESSION_COOKIE_SECURE=False
+#SESSION_COOKIE_DOMAIN='127.0.0.1'
 ALLOWED_HOSTS = ['*']
 
-has_openshift = 'OPENSHIFT_HOMEDIR' in os.environ
-#webfaction = 'HOSTNAME' in os.environ and 'webfaction' in os.environ['HOSTNAME']
-webfaction = '_' in os.environ
-#print (os.environ)
-# Application definition
-if webfaction:
-    print ("webfaction detected")
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-            'LOCATION': 'unix:/home/jchinte/memcached.sock',
-        }
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
+        #'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+        'LOCATION': '127.0.0.1:11211',
     }
-    print(CACHES)
-else:
-    print ("webfaction not detected")
+}
+
 INSTALLED_APPS = (
     'django.contrib.admin',
-    'registration',
+    'django_registration',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -64,30 +63,59 @@ INSTALLED_APPS = (
     'Event_Planner.apps.Event_PlannerConfig',
     'dh5bp',
     'dh5mbp',
-    'django_mobile',
-    'django.contrib.sites'
+    'django.contrib.sites',
+    'rest_framework',
+    'rest_framework.authtoken',
+    'corsheaders',
+    'django_crontab',
+    'wagtail.contrib.forms',
+    'wagtail.contrib.redirects',
+    'wagtail.embeds',
+    'wagtail.sites',
+    'wagtail.users',
+    'wagtail.snippets',
+    'wagtail.documents',
+    'wagtail.images',
+    'wagtail.search',
+    'wagtail.admin',
+    'wagtail.core',
+    'modelcluster',
+    'taggit',
+    'dj_rest_auth',
+    'pv_blog',
+    'wagtail.contrib.routable_page',
+    'menus',
+    'django_extensions',
+    'protected_media',
 )
 
-MIDDLEWARE_CLASSES = (
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        # 'rest_framework.authentication.SessionAuthentication',
+    ],
+    # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    # 'PAGE_SIZE': 10,
+}
+
+MIDDLEWARE = [
     #'ssl_redirect.middleware.SSLRedirectMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django_mobile.middleware.MobileDetectionMiddleware',
-    'django_mobile.middleware.SetFlavourMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
-#    'django.middleware.cache.UpdateCacheMiddleware',
-#    'django.middleware.common.CommonMiddleware',
-#    'django.middleware.cache.FetchFromCacheMiddleware',
-)
+    'wagtail.contrib.redirects.middleware.RedirectMiddleware',
+]
+
+WAGTAIL_SITE_NAME = 'pv'
 
 ROOT_URLCONF = 'music_planner0.urls'
 
 WSGI_APPLICATION = 'music_planner0.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
@@ -101,78 +129,36 @@ DATABASES = {
         'HOST': '127.0.0.1',
         'PORT': '5432',
     },
-    'postgresql': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'praisingvoices_postgres',
-        'USER': 'pvdb',
-        'PASSWORD': 'PuT9{pB}3$pxX2[B',
-        'HOST': '127.0.0.1',
-        'PORT': '5432',
-    },
-    'mysql': {
-        'ENGINE': 'django.db.backends.mysql',
-        'OPTIONS': {
-            }, 
-        'NAME': 'choirplanner',
-        'USER': 'choirplanner',
-        'PASSWORD': 'choirplanner',
-        'HOST': '127.0.0.1',
-        },
+
 }
-if not webfaction:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.path.join(BASE_DIR, 'db2.sqlite3'),
-        },
-    }
-    CSRF_COOKIE_SECURE = False
-STATIC_URL = '/static/static/'
-MEDIA_URL = '/static/media/'
+
+STATIC_URL = '/static/'
+MEDIA_URL = '/media/'
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
+    os.path.join(BASE_DIR, 'templates', 'dist', '_assets'),
+    os.path.join(BASE_DIR, 'templates', 'dist', 'css'),
     )
 STATIC_ROOT= os.path.join(BASE_DIR, '../../praisingvoices_static/static')
 MEDIA_ROOT = os.path.join(BASE_DIR, '../../praisingvoices_static/media')
-#MEDIA_ROOT = os.path.join(STATIC_ROOT, 'media')
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-STATICFILES_DIRS = (
-    '/home/jchinte/webapps/praisingvoices_static/static' if webfaction else '/Users/jchinte/webapps/praisingvoices_static/static',
-    )
-print(STATIC_ROOT)
-tdir = [os.path.join(BASE_DIR, 'templates'),]
-DEBUG = True
-td = False
+PROTECTED_MEDIA_ROOT = "%s/protected/" % BASE_DIR
+PROTECTED_MEDIA_URL = "/protected"
+PROTECTED_MEDIA_SERVER = "nginx"  # Defaults to "django"
+PROTECTED_MEDIA_LOCATION_PREFIX = "/internal"  # Prefix used in nginx config
+PROTECTED_MEDIA_AS_DOWNLOADS = False  # Controls inclusion of a Content-Disposition header
+#STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+# STATICFILES_DIRS = (
+#     '/home/jchinte/home/webapps/praisingvoices2/choirplanner_pv/static/',
+#     )
 SITE_ID=2
-JAVA_GATEWAY_ADDRESS = '127.0.0.1'
-
-JAVA_DIR = os.path.join(BASE_DIR,  'lib')
 # Internationalization
 # https://docs.djangoproject.com/en/1.6/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
+TIME_ZONE = 'America/Los_Angeles'
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
-
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.6/howto/static-files/
-
-
-
-
-
-#MEDIAFILES_DIRS = (
-#                   os.path.join(BASE_DIR, "media"),
-#                   '/home/jchinte/code/media/')
-
-
 
 SERIALIZATION_MODULES = {
                          'json': 'wadofstuff.django.serializers.json2' 
@@ -182,41 +168,33 @@ LOGIN_URL='/accounts/login'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': tdir,
+        'DIRS': [os.path.join(BASE_DIR, 'templates'),],
         'OPTIONS': {
-            'debug': td,
+            'debug': True,
             'context_processors': [ 
                 "django.contrib.auth.context_processors.auth",
-                #"django.core.context_processors.debug",
-                #"django.core.context_processors.i18n",
-                #"django.core.context_processors.media",
-                #"django.core.context_processors.static",
-                #"django.core.context_processors.tz",
-                "django.contrib.messages.context_processors.messages",
-                #'django.core.context_processors.request',
-                'django_mobile.context_processors.flavour',                                
+                "django.contrib.messages.context_processors.messages",                             
                 'context_processors.dh5mbp_jquery_mobile',
+                'django.template.context_processors.request',
+                'wagtail.contrib.settings.context_processors.settings',
             ],
             'loaders': [
-                'django_mobile.loader.Loader',
                 'django.template.loaders.filesystem.Loader',
-                'django.template.loaders.app_directories.Loader',
-
-                
+                'django.template.loaders.app_directories.Loader',           
             ]
         },
     },
 ]
-#django-mobile hack
-TEMPLATE_LOADERS = TEMPLATES[0]['OPTIONS']['loaders']
-EMAIL_HOST='smtp.webfaction.com'
+
+EMAIL_HOST='mail.praisingvoices.org'
 EMAIL_PORT=587
 EMAIL_USE_TLS=True
-EMAIL_HOST_USER='praisingvoices'
+EMAIL_HOST_USER='praisingvoices@praisingvoices.org'
 EMAIL_HOST_PASSWORD='%AJ$+q4-+f$b`"hy'
 DEFAULT_FROM_EMAIL='praisingvoices@praisingvoices.org'
 SERVER_EMAIL='praisingvoices@praisingvoices.org'
 ACCOUNT_ACTIVATION_DAYS=7
+REGISTRATION_OPEN=False
 REGISTRATION_AUTO_LOGIN = True
 REGISTRATION_ADMINS=[('jchinte','jchinte@gmail.com'),]
 REGISTRATION_FORM='registration_pv.forms.PVRegistrationForm'
@@ -225,3 +203,7 @@ FILE_UPLOAD_PERMISSIONS=0o644
 TEMPLATE_CONTEXT_PROCESSORS = (
      'django.template.context_processors.request',
 )
+
+CRONJOBS = [
+    ('0 0 * * 0', 'SongManager.cron.cleanComposers')
+]

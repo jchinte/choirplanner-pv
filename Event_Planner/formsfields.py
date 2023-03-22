@@ -30,7 +30,7 @@ class EventCreateForm(ModelForm):
                                                  ])
     class Meta:
         model = Event
-        fields='__all__'
+        fields=('date', 'title', 'is_template',)
         #widgets = {'date': SplitDateTimeWidget}
 
 

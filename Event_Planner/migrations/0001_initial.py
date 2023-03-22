@@ -60,7 +60,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='LinkedSegment',
             fields=[
-                ('segment_ptr', models.OneToOneField(parent_link=True, auto_created=True, primary_key=True, serialize=False, to='Event_Planner.Segment')),
+                ('segment_ptr', models.OneToOneField(on_delete=models.CASCADE, parent_link=True, auto_created=True, primary_key=True, serialize=False, to='Event_Planner.Segment')),
                 ('link', models.URLField()),
             ],
             bases=('Event_Planner.segment',),
@@ -68,15 +68,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='SongSegment',
             fields=[
-                ('segment_ptr', models.OneToOneField(parent_link=True, auto_created=True, primary_key=True, serialize=False, to='Event_Planner.Segment')),
-                ('song', models.ForeignKey(blank=True, to='SongManager.Song', null=True)),
+                ('segment_ptr', models.OneToOneField(on_delete=models.CASCADE, parent_link=True, auto_created=True, primary_key=True, serialize=False, to='Event_Planner.Segment')),
+                ('song', models.ForeignKey(on_delete=models.CASCADE, blank=True, to='SongManager.Song', null=True)),
             ],
             bases=('Event_Planner.segment',),
         ),
         migrations.AddField(
             model_name='segment',
             name='event',
-            field=models.ForeignKey(to='Event_Planner.Event'),
+            field=models.ForeignKey(to='Event_Planner.Event', on_delete=models.CASCADE),
         ),
         migrations.AddField(
             model_name='participant',
@@ -86,16 +86,16 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='activity',
             name='participant',
-            field=models.ForeignKey(to='Event_Planner.Participant'),
+            field=models.ForeignKey(to='Event_Planner.Participant', on_delete=models.CASCADE),
         ),
         migrations.AddField(
             model_name='activity',
             name='role',
-            field=models.ForeignKey(to='Event_Planner.Role'),
+            field=models.ForeignKey(to='Event_Planner.Role', on_delete=models.CASCADE),
         ),
         migrations.AddField(
             model_name='activity',
             name='segment_event',
-            field=models.ForeignKey(to='Event_Planner.Segment'),
+            field=models.ForeignKey(to='Event_Planner.Segment', on_delete=models.CASCADE),
         ),
     ]

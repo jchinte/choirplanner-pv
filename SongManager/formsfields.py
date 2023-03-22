@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 from SongManager.models import SongFile, Song, Composer, Tag
 from django.forms import Field, Form, ModelForm, HiddenInput, TextInput, CharField, ChoiceField
 import collections
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 from SongManager.models import FileType
 
 #Fields
@@ -10,7 +10,7 @@ from SongManager.models import FileType
 class MultiDataField(CharField):
     def to_python(self, value):
         try:
-            return list(filter(lambda s: s.strip(), map(lambda s: s.strip(), smart_text(value).split(';'))))
+            return list(filter(lambda s: s, map(lambda s: s.strip(), smart_str(value).split(';'))))
         except:
             if isinstance(value, collections.Iterable):
                 return self.to_strings(value)
@@ -18,81 +18,36 @@ class MultiDataField(CharField):
                 return value
     
     def to_strings(self, values):
-        result = []
-        for value in values:
-            value = value.strip()
-            if value:
-                try:
-                    result.append(smart_text(value.strip())) 
-                except:
-                    try:
-                        result.append(value.__str__())
-                    except:
-                        result.append( str(value))
-        return result        
+        return [str(value).strip() for value in values if str(value).strip()]
 
     def validate(self, value):
         super(MultiDataField, self).validate(value)
 
+def split_name(name):
+    #case last, first       
+    if "," in name:
+        composer_names = name.split(',', 1)
+        return composer_names[1].strip(), composer_names[0].strip()
+
+    #case first last
+    composer_names = name.rsplit(' ', 1)
+    if len(composer_names) == 1:
+        return '', composer_names[0].strip()
+    return composer_names[0].strip(), composer_names[1].strip()
 
 class MultiNameField(MultiDataField):
-    
-    
-    def split_name(self, name):
-        first = last = ""
-        #case last, first       
-        if "," in name:
-            names = name.split(',', 1)
-            last = names[0].strip()
-            first = names[1].strip()
-        else:
-            #case first last
-            names = name.split(' ')
-            if len(names) == 1:
-                last = names[0].strip()
-            else:
-                first = " ".join(names[0:len(names) - 1]).strip()
-                last = names[len(names) - 1].strip() #case first last
-        return first, last
 
     def to_python(self, value):
         new_value = super(MultiNameField, self).to_python(value)
-        name_list = []
-        for name in new_value:
-            first, last = self.split_name(name)
-            name_list.append([first, last])
-        return name_list
+        return [list(split_name(name)) for name in new_value]
     
 #Forms
 
 
-def split_name(name):
-    first = last = ""
-    #case last, first       
-    if "," in name:
-        composer_names = name.split(',', 1)
-        last = composer_names[0].strip()
-        first = composer_names[1].strip()
-    else:
-        #case first last
-        composer_names = name.split(' ')
-        if len(composer_names) == 1:
-            last = composer_names[0].strip()
-        else:
-            first = " ".join(composer_names[0:len(composer_names) - 1]).strip()
-            last = composer_names[len(composer_names) - 1].strip() #case first last
-    return first, last
+
 def inline_list(object_list):
-    result = ""
-    first = True
-    for name in object_list:
-        if first:
-            first = False
-        else:
-            result += ";"
-        result += name.__str__()
-    
-    return result
+    return ';'.join([str(name) for name in object_list])
+
 class SongForm(ModelForm):
     composer_list = MultiDataField(label='composers')
     tag_list = MultiDataField(label='tags')
@@ -147,7 +102,7 @@ class SearchForm(Form):
         ('E', 'first line lyrics')
     )
     search = CharField(max_length=200)
-    options = ChoiceField(SEARCH_CHOICES)
+    options = ChoiceField(choices=SEARCH_CHOICES)
     
 class SongFileForm(ModelForm):
     filetype_list = MultiDataField(max_length=100, label='File Types', required=False)

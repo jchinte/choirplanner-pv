@@ -1,0 +1,15 @@
+Django
+django-allauth==0.45.0
+django-cors-headers==3.2.1
+django-html5-boilerplate==1.0.8
+django-html5-mobile-boilerplate==1.0.5
+django-mobile==0.7.0
+django-model-utils==3.0.0
+django-registration-redux==1.7
+django-storages==1.6.5
+djangorestframework==3.12.4
+djangorestframework-simplejwt==4.7.1
+drf-yasg==1.20.0
+py4j==0.10.6
+pytz==2017.2
+wadofstuff-django-serializers==1.1.0

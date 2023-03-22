@@ -44,7 +44,7 @@ class Migration(migrations.Migration):
                 ('file', models.FileField(upload_to=b'songs')),
                 ('comments', models.CharField(max_length=300, blank=True)),
                 ('filetypes', models.ManyToManyField(to='SongManager.FileType')),
-                ('song', models.ForeignKey(to='SongManager.Song')),
+                ('song', models.ForeignKey(to='SongManager.Song', on_delete=models.CASCADE)),
             ],
         ),
         migrations.CreateModel(

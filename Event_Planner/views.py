@@ -1,11 +1,15 @@
 # Create your views here.
 from __future__ import unicode_literals
+from collections import OrderedDict
+import mimetypes
 from django.shortcuts import render
 from urllib.parse import urlparse
 from django.views.generic import DetailView, CreateView, UpdateView, DeleteView
+from rest_framework.permissions import DjangoModelPermissions
+from rest_framework.utils.serializer_helpers import ReturnDict
 from Event_Planner.models import Event, Segment, SongSegment, Activity, Participant, Role
 from django.db.models import Max
-from django.core.urlresolvers import reverse, resolve
+from django.urls import reverse, resolve
 from django.shortcuts import redirect
 from Event_Planner.formsfields import ParticipantForm, ActivityForm, EventForm
 from django.contrib.auth.decorators import permission_required, login_required
@@ -15,7 +19,7 @@ from django.core.cache import cache
 from django.forms.models import modelformset_factory, modelform_factory,\
     ModelForm
 from django.forms import HiddenInput
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 from SongManager.views import JSONResponseMixin
 from django.views.generic.detail import SingleObjectTemplateResponseMixin
 from django.views.generic.edit import BaseUpdateView, BaseCreateView,\
@@ -27,21 +31,25 @@ from django.template import Context, loader
 from Event_Planner.formsfields import EventTemplateForm,\
     TemplateChoiceForm, EventCreateForm, AjaxActivityForm
 from django.views.generic.list import ListView
-from django.http import HttpResponse, HttpResponseServerError, FileResponse
+from django.http import HttpResponse, HttpResponseServerError, FileResponse, HttpResponseBadRequest
 from datetime import timedelta
 from django.utils import timezone as datetime
-import django_mobile
 from SongManager.models import SongFile, Song
 import music_planner0.settings as settings
 import os.path
-from py4j.java_gateway import JavaGateway, GatewayParameters
 from subprocess import check_output, call
+from Event_Planner.serializers import EventSerializer, SegmentSerializer, SongSegmentSerializer, EventListSerializer
+from rest_framework.viewsets import ViewSet, ModelViewSet
+from xml.dom import minidom
+
+def is_ajax(request):
+    return request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
 
 class BaseEventListView(ListView):
     context_object_name="event_list"
     def get_context_data(self, **kwargs):
         context = super(BaseEventListView, self).get_context_data(**kwargs)
-        if self.request.is_ajax():
+        if is_ajax(self.request):
             context.update({
                             'base': 'base.html'
                             })
@@ -97,7 +105,7 @@ class OrderUpdateView(JSONResponseMixin, BaseUpdateView):
     def render_to_response(self, context):
         data=json.loads(self.request.body)
         qs = Segment.objects.filter(event=self.object.pk)
-        i=1;
+        i=1
         for s in data['array']:
             num = s.split('_')[1]
             qs.filter(pk=num).update(order=i)
@@ -136,7 +144,7 @@ class EventUpdateView(JSONResponseMixin, SingleObjectTemplateResponseMixin, Base
         i=0
         for seg in segment_list:
             new_form_class = modelform_factory(seg.__class__, fields='__all__', widgets={'event':HiddenInput})
-            new_form = new_form_class(instance=seg, prefix=('segment-'+smart_text(seg.pk)))
+            new_form = new_form_class(instance=seg, prefix=('segment-'+smart_str(seg.pk)))
             form_list.append(new_form)
             i = i+1
         context.update({'formlist': form_list,
@@ -156,7 +164,7 @@ class EventUpdateView(JSONResponseMixin, SingleObjectTemplateResponseMixin, Base
     def render_to_response(self, context):
         if self.request.method=='GET':
             return SingleObjectTemplateResponseMixin.render_to_response(self, context)
-        elif self.request.is_ajax() or 'xhr' in self.request.GET:
+        elif is_ajax(self.request) or 'xhr' in self.request.GET:
             data=json.loads(self.request.body)
             qs = Segment.objects.filter(event=self.object.pk)
             i=1
@@ -231,72 +239,75 @@ class ActivityCreateView(CreateView):
         context.update({'curr_url': self.request.path})
         return super(ActivityCreateView, self).render_to_response(context)
 
-@cache_page (60*15)
+@login_required
+# @cache_page (60*15)
 def EventPowerpointView2(request, pk, filename):
     cachefname = filename.replace(" ", "_")
     fdata = cache.get(cachefname, None)
     if fdata is not None:
         response = FileResponse(open(fdata, "rb"))
-        #response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.presentationml.presentation')
-        if (filename==None or filename == "" ):
-            filename = Event.objects.get(id=pk).title + '.pptx'
+        if not filename:
+            filename = Event.objects.get(id=pk).get_pptx_name()
         response['Content-Disposition'] = 'attachment; filename="' + filename + '"'
         response['Content-Type']='application/vnd.openxmlformats-officedocument.presentationml.presentation'
         #response['Content-Length'] = os.path.getsize(fdata)
         return response
-
-    #get all items related to event
-    songs = SongSegment.objects.filter(event=pk).order_by("order")
-    #TODO: segment_queryset = Segment.objects.select_subclasses().order_by('order')
-    #get powerpoints related to songs
-    #blankFilename = os.path.join(settings.MEDIA_ROOT, "black.pptx")
-    blankFilename = "../black.pptx"
-    pptFilenames = []
-    #pptFilenames.append(blankFilename)
-    for s in songs:
-        if s.song:
-            files = SongFile.objects.filter(song=s.song.id, filetypes__type='Powerpoint')
-            for f in files:
-                #newPath = os.path.join(settings.MEDIA_ROOT, f.file.name)
-                newPath = f.file.name
-                _,file_extension = os.path.splitext(newPath)
-                if file_extension=='.pptx':
-                    #pptFilenames.append(os.path.join(settings.MEDIA_ROOT, f.file.name))
-                    pptFilenames.append(os.path.basename(f.file.name))
-                    pptFilenames.append(blankFilename)
-    if len(pptFilenames)==0:
-        return HttpResponse("")
-    else:
-        #gateway = JavaGateway(gateway_parameters=GatewayParameters(address=settings.JAVA_GATEWAY_ADDRESS))
-        #javaFilenames = gateway.new_array(gateway.jvm.java.lang.String, len(pptFilenames))
-        #for i in range(len(pptFilenames)):
-        #    javaFilenames[i] = pptFilenames[i]
-        #newFile = gateway.entry_point.mergePPTsToFile(javaFilenames)
-        call(['/usr/bin/tar', 'xzf', '/home/jchinte/newpptMerge.tar.gz', '-C', '/home/jchinte'])
-        command =  ['/home/jchinte/bin/newpptMerge', os.path.join(settings.MEDIA_ROOT, 'songs/')] + pptFilenames
-        output = check_output(command)
-        ols = output.splitlines()
-        newFile = "/home/jchinte/tmp/MergedPresentation.pptx"
-        for l in ols:
-            #l = str(l)
-            print(":",l)
-            if l.startswith(b'target:'):
-                newFile = l.split()[1]
-        print("output: " + str(output))
-        print("file: " + str(newFile))
-        response = FileResponse(open(newFile, "rb"))
-        #response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.presentationml.presentation')
-        if (filename==None or filename == "" ):
-            filename = Event.objects.get(id=pk).title + '.pptx'
-        response['Content-Disposition'] = 'attachment; filename="' + filename + '"'
-        response['Content-Type']='application/vnd.openxmlformats-officedocument.presentationml.presentation'
-        #response['Content-Length'] = os.path.getsize(newFile)
-        #response.write(newFile)
-        cache.set(cachefname, newFile)
-
+    event = Event.objects.get(id=pk)
+    if not event.pptx.name or not os.path.exists(os.path.join(settings.MEDIA_ROOT, event.pptx.name)):
+        event.create_pptx()
+    if not os.path.exists(os.path.join(settings.MEDIA_ROOT, event.pptx.name)):
+        return HttpResponse(status=204)
+    response = HttpResponse()
+    if not request.headers.get('X-Real-Ip'):
+        response.status_code = 404
+        response.content = 'The request should be coming from the Nginx server.'
         return response
+    response['X-Accel-Redirect'] = '/internal/{}'.format(os.path.basename(event.pptx.url))
+    response['Content-Disposition'] = 'attachment; filename="{}"'.format(os.path.basename(event.pptx.name))
+    return response
+    # #get all items related to event
+    # songs = SongSegment.objects.filter(event=pk).order_by("order")
+    # #TODO: segment_queryset = Segment.objects.select_subclasses().order_by('order')
+    # #get powerpoints related to songs
+    # #blankFilename = os.path.join(settings.MEDIA_ROOT, "black.pptx")
+    # blankFilename = "../black.pptx"
+    # pptFilenames = []
+    # #pptFilenames.append(blankFilename)
+    # for s in songs:
+    #     if s.song:
+    #         files = SongFile.objects.filter(song=s.song.id, filetypes__type='Powerpoint')
+    #         for f in files:
+    #             #newPath = os.path.join(settings.MEDIA_ROOT, f.file.name)
+    #             newPath = f.file.name
+    #             _,file_extension = os.path.splitext(newPath)
+    #             if file_extension=='.pptx':
+    #                 #pptFilenames.append(os.path.join(settings.MEDIA_ROOT, f.file.name))
+    #                 pptFilenames.append(os.path.basename(f.file.name))
+    #                 pptFilenames.append(blankFilename)
+    # if len(pptFilenames)==0:
+    #     return HttpResponse("")
+    # else:
+    #     command =  ['/home/jchinte/bin/newpptMerge', os.path.join(settings.MEDIA_ROOT, 'songs/')] + pptFilenames
+    #     output = check_output(command)
+    #     ols = output.splitlines()
+    #     newFile = "/home/jchinte/tmp/MergedPresentation.pptx"
+    #     for l in ols:
+    #         #l = str(l)
+    #         if l.startswith(b'target:'):
+    #             newFile = l.split()[1]
+    #     response = FileResponse(open(newFile, "rb"))
+    #     #response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.presentationml.presentation')
+    #     if (filename==None or filename == "" ):
+    #         filename = Event.objects.get(id=pk).title + '.pptx'
+    #     response['Content-Disposition'] = 'attachment; filename="' + filename + '"'
+    #     response['Content-Type']='application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    #     #response['Content-Length'] = os.path.getsize(newFile)
+    #     #response.write(newFile)
+    #     cache.set(cachefname, newFile)
 
-@cache_page (60*15)
+    #     return response
+
+# @cache_page (60*15)
 def EventPowerpointView(request, pk):
     return EventPowerpointView2(request, pk, Event.objects.get(id=pk).title + '.pptx')
 
@@ -470,16 +481,7 @@ class TemplateCreateView(EventCreateView):
     def form_valid(self, form):
         response = super(TemplateCreateView, self).form_valid(form)
         if hasattr(self, 'template') and self.template is not None:
-            segments = Segment.objects.select_subclasses().filter(event=self.template)
-            for segment in segments:
-                segment.pk=None
-                segment.id=None
-                if str(segment.title) == 'Announcements':
-                    announcement = Song(title = "Announcements " + str(form.cleaned_data['date']), first_line = 'Announcements for ' + form.cleaned_data['title'])
-                    announcement.save()
-                    segment.song = announcement
-                segment.event = self.object
-                segment.save()
+            self.object.copy_event(int(self.template))
         return response
 
 
@@ -500,15 +502,11 @@ class SegmentCreateView(JSONResponseMixin, SingleObjectTemplateResponseMixin, Ba
     def get_initial(self):
         if 'event' in self.request.POST:
             return super(SegmentCreateView, self).get_initial()
-        if ('HTTP_REFERER' in self.request.META):
-            url = self.request.META['HTTP_REFERER']
-        else:
-            pass
         url = self.request.path
 
         match = resolve(urlparse(url)[2])
         event = Event.objects.get(pk=match.kwargs['event_id'])
-        max_order = event.segment_set.aggregate(Max('order'))
+        max_order = event.segments.aggregate(Max('order'))
         if max_order['order__max']:
             new_order = max_order['order__max'] + 1
         else:
@@ -530,15 +528,15 @@ class SegmentCreateView(JSONResponseMixin, SingleObjectTemplateResponseMixin, Ba
     def get_form_kwargs(self):
         kwargs = super(SegmentCreateView, self).get_form_kwargs()
         if self.object:
-            kwargs.update({'prefix': ('segment-'+smart_text(self.object.pk))})
+            kwargs.update({'prefix': ('segment-'+smart_str(self.object.pk))})
         return kwargs
     def render_to_response(self, context):
-        if self.request.is_ajax() or 'xhr' in self.request.GET:
+        if is_ajax(self.request) or 'xhr' in self.request.GET:
             ajax_dictionary = {}
             initial = self.get_initial()
             self.object = self.model(order=initial['order'], title=initial['title'], event=initial['event'])
             self.object.save()
-            prefix=('segment-'+smart_text(self.object.pk))
+            prefix=('segment-'+smart_str(self.object.pk))
             form_class = self.get_form_class()
             form = self.get_form(form_class)
             c={
@@ -584,7 +582,7 @@ class SegmentUpdateView(UpdateView):
     def get_form_kwargs(self):
         kwargs = super(SegmentUpdateView, self).get_form_kwargs()
         match = resolve(urlparse(self.request.path)[2])
-        kwargs.update({'prefix': ('segment-'+smart_text(match.kwargs['pk']))})
+        kwargs.update({'prefix': ('segment-'+smart_str(match.kwargs['pk']))})
         return kwargs
 
     def get_success_url(self):
@@ -618,7 +616,7 @@ class JSONSegmentUpdateView(JSONResponseMixin, BaseUpdateView):
     def get_form_kwargs(self):
         kwargs = super(JSONSegmentUpdateView, self).get_form_kwargs()
         match = resolve(urlparse(self.request.path)[2])
-        kwargs.update({'prefix': ('segment-'+smart_text(match.kwargs['pk']))})
+        kwargs.update({'prefix': ('segment-'+smart_str(match.kwargs['pk']))})
         return kwargs
     def form_valid(self, form):
         # save form
@@ -699,7 +697,7 @@ def JSONRoleListView(request):
         roles = Role.objects.all()
     role_list = []
     for role in roles:
-        role_list.append(smart_text(role))
+        role_list.append(smart_str(role))
 
     response = HttpResponse(json.dumps(role_list,  ensure_ascii=False))
     return response
@@ -715,7 +713,7 @@ def JSONParticipantListView(request):
         participants = Participant.objects.all()
     participant_list = []
     for participant in participants:
-        participant_list.append(smart_text(participant))
+        participant_list.append(smart_str(participant))
 
     response = HttpResponse(json.dumps(participant_list,  ensure_ascii=False))
     return response
@@ -747,7 +745,7 @@ def JSONPDFView(request, event_id):
                 if songInfo['files']:
                     pdfSongs.append(songInfo)
         return HttpResponse(json.dumps(pdfSongs, ensure_ascii=False))
-@login_required
+# @login_required
 def getSongs(event_id):
     songs = SongSegment.objects.filter(event=event_id).order_by("order")
     fs = []
@@ -761,33 +759,90 @@ def getSongs(event_id):
                     fs.append(os.path.join(settings.MEDIA_ROOT, f.file.name))
     return fs
 
-def RESTEventView(request):
-    def get(request):
-        pass
-    def post(request):
-        return HTTPResponse(status=405)
-    def put(request):
-        return HTTPResponse(status=405)
-    def delete(request):
-        return HTTPResponse(status=405)
-    methods = {
-        'GET': get,
-        'POST': post,
-        'PUT': put,
-        'DELETE': delete
-    }
-    #dispatch
-    return methods[request.method](request)
 
 @login_required
 def RawPDFView(request, event_id):
     if request.method=='GET':
         fs = [os.path.join(settings.MEDIA_ROOT, SongFile.objects.get(pk=i).file.name) for i in request.GET.getlist('fid[]')] if 'fid[]' in request.GET \
          else getSongs(event_id)
-        combinedFile = check_output("/home/jchinte/bin/qpdf --empty --decrypt --pages".split() + fs + "-- -".split())
+        combinedFile = check_output(["pdftk"] + fs + ["cat", "output", "-"])
         response = HttpResponse(combinedFile, content_type='application/pdf')
         filename = Event.objects.get(id=event_id).title + '.pdf'
         response['Content-Disposition'] = 'attachment; filename="' + filename + '"'
         response['Content-Length'] = len(combinedFile)
         return response
         #return HttpResponse(json.dumps(pdfSongs, ensure_ascii=False))
+
+class SegmentViewSet(ModelViewSet):
+    permission_classes = [DjangoModelPermissions]
+    serializer_class = SegmentSerializer
+    queryset = Segment.objects.select_subclasses()
+    def get_queryset(self):
+        return Segment.objects.select_subclasses()
+
+class SongSegmentViewSet(ModelViewSet):
+    permission_classes = [DjangoModelPermissions]
+    serializer_class = SongSegmentSerializer
+    queryset = SongSegment.objects.all()
+
+from rest_framework import renderers
+class PPTRenderer(renderers.BaseRenderer):
+    media_type = mimetypes.guess_type('x.pptx')[0]
+    format = 'pptx'
+    charset = None
+    render_style =  'binary'
+    def render(self, data, media_type=None, render_context=None):
+        event = Event.objects.get(id=data['id'])
+        if not event.pptx.name or not os.path.exists(os.path.join(settings.MEDIA_ROOT, event.pptx.name)):
+            event.create_pptx()
+        filename = event.pptx.name
+        final_data = open(os.path.join(settings.MEDIA_ROOT, filename), "rb").read()
+        return final_data
+
+class EventViewSet(ModelViewSet):
+    permission_classes = [DjangoModelPermissions]
+    serializer_class = EventSerializer
+    queryset = Event.objects.all()
+    renderer_classes = [renderers.JSONRenderer, renderers.BrowsableAPIRenderer, PPTRenderer,]
+  
+    #@method_decorator(cache_page(60*60*2))
+    def list(self, request, *args, **kwargs):
+        #serializer = SongSerializer(self.queryset, many=True, fields = ['id', 'title', 'composers', 'tags'])
+        self.serializer_class = EventListSerializer
+        res = super().list(request, *args, **kwargs)
+        if hasattr(res, 'data'):
+            rd = OrderedDict()
+            rd.update({
+                'values': res.data, 
+                'can_create_template':request.user.has_perm('event.can_create_template')
+            })
+            res.data = rd
+        return res
+    def retrieve(self, request, pk=None, *args, **kwargs):
+        res = super().retrieve(request, pk, *args, **kwargs)
+        res.data.update({'can_change_event': request.user.has_perm('can_change_event')})
+        return res
+
+@login_required
+def ForScoreSetlistView(request, event_id):
+    if request.method=='GET':
+        fs = [os.path.basename(f) for f in getSongs(event_id)]
+        root = minidom.Document()
+        xml = root.createElement('forScore')
+        root.appendChild(xml)
+        xml.setAttribute('kind', 'setlist')
+        xml.setAttribute('version', '1.0')
+        xml.setAttribute('title', Event.objects.get(id=event_id).title)
+        for f in fs:
+            s = root.createElement('score')
+            s.setAttribute('title', f)
+            s.setAttribute('path', f)
+            xml.appendChild(s)
+        xml_str = root.toprettyxml(indent='\t')
+        response=HttpResponse(xml_str, content_type='application/4SS')
+        filename=Event.objects.get(id=event_id).title+'.4SS'
+        response['Content-Disposition'] = 'attachment; filename="'+filename+'"'
+        response['Content-Length'] = len(xml_str)
+        return response
+    else:
+        return HttpResponseBadRequest

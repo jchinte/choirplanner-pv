@@ -3,7 +3,7 @@ Full Python serializer for Django.
 """
 import wadofstuff.django.serializers.base
 from  wadofstuff.django.serializers.base import Serializer as BaseSerializer
-from django.utils.encoding import smart_text, is_protected_type
+from django.utils.encoding import smart_str, is_protected_type
 from django.core.serializers.python import Deserializer as PythonDeserializer
 
 class Serializer(BaseSerializer):
@@ -49,8 +49,8 @@ class Serializer(BaseSerializer):
         Called when serializing of an object ends.
         """
         self.objects.append({
-            "model"  : smart_text(obj._meta),
-            "pk"     : smart_text(obj._get_pk_val(), strings_only=True),
+            "model"  : smart_str(obj._meta),
+            "pk"     : smart_str(obj._get_pk_val(), strings_only=True),
             "fields" : self._fields
         })
         if self._extras:
@@ -62,7 +62,7 @@ class Serializer(BaseSerializer):
         """
         Called to handle each individual (non-relational) field on an object.
         """
-        value = field._get_val_from_obj(obj)
+        value = field.value_from_object(obj)
         # Protected types (i.e., primitives like None, numbers, dates,
         # and Decimals) are passed through as is. All other values are
         # converted to string first.
@@ -93,23 +93,23 @@ class Serializer(BaseSerializer):
                 if self.use_natural_keys and hasattr(related, 'natural_key'):
                     related = related.natural_key()
                 else:
-                    if field.rel.field_name == related._meta.pk.name:
+                    if field.remote_field.field_name == related._meta.pk.name:
                         # Related to remote object via primary key
                         related = related._get_pk_val()
                     else:
                         # Related to remote object via other field
-                        related = smart_text(getattr(related,
-                            field.rel.field_name), strings_only=True)
+                        related = smart_str(getattr(related,
+                            field.remote_field.field_name), strings_only=True)
                 self._fields[fname] = related
         else:
-            self._fields[fname] = smart_text(related, strings_only=True)
+            self._fields[fname] = smart_str(related, strings_only=True)
 
     def handle_m2m_field(self, obj, field):
         """
         Called to handle a ManyToManyField.
         Recursively serializes relations specified in the 'relations' option.
         """
-        if field.rel.through._meta.auto_created:
+        if field.remote_field.through._meta.auto_created:
             fname = field.name
             if fname in self.relations:
                 # perform full serialization of M2M
@@ -124,10 +124,10 @@ class Serializer(BaseSerializer):
             else:
                 # emulate the original behaviour and serialize to a list of 
                 # primary key values
-                if self.use_natural_keys and hasattr(field.rel.to, 'natural_key'):
+                if self.use_natural_keys and hasattr(field.remote_field.to, 'natural_key'):
                     m2m_value = lambda value: value.natural_key()
                 else:
-                    m2m_value = lambda value: smart_text(
+                    m2m_value = lambda value: smart_str(
                         value._get_pk_val(), strings_only=True)
                 self._fields[fname] = [m2m_value(related)
                     for related in getattr(obj, fname).iterator()]
@@ -147,9 +147,9 @@ class Serializer(BaseSerializer):
         if hasattr(obj, field):
             extra = getattr(obj, field)
             if callable(extra):
-                self._extras[field] = smart_text(extra(), strings_only=True)
+                self._extras[field] = smart_str(extra(), strings_only=True)
             else:
-                self._extras[field] = smart_text(extra, strings_only=True)
+                self._extras[field] = smart_str(extra, strings_only=True)
                 
 
 Deserializer = PythonDeserializer
