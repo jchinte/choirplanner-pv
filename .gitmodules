@@ -1,0 +1,3 @@
+[submodule "vue_frontend/tachyons"]
+	path = vue_frontend/tachyons
+	url = https://github.com/tachyons-css/tachyons-custom
