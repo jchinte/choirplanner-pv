@@ -22,7 +22,7 @@ export default {
     },
     setup() {
         //localStorage.clear()
-        const debug = true;
+        const debug = false;
         const hash = ref(localStorage.getItem('hash'));
         const username = ref(localStorage.getItem('username'))
         provide('hash', hash)
