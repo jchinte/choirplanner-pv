@@ -1,7 +1,4 @@
-<template>
- <router-view name="nav"></router-view>
-<router-view />
-</template>
+
 
 <script>
 import {
@@ -52,6 +49,11 @@ export default {
 
 
 </script>
+
+<template>
+    <router-view name="nav" />
+   <router-view />
+</template>
 
 <style>
 
