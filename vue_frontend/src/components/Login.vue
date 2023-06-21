@@ -15,8 +15,9 @@
         <router-link 
             v-for="menuItem in menu" 
             :key="menuItem.sort_order"
-            :to="{ name: 'blog-post', params: { slug: menuItem.slug }}" 
+            :to="menuItem.slug?{ name: 'blog-post', params: { slug: menuItem.slug }} : menuItem.link_url" 
             class="f6 link dib white dim mr3 mr4-ns">{{ menuItem.title }}</router-link>
+        <a class="f6 dib white bg-animate hover-bg-white hover-black no-underline pv2 ph4 br-pill ba b--white-20" href="/events/">Old Version</a>
         <!-- <a v-for="menuItem in menu" 
             :key="menuItem.sort_order" 
             class="f6 link dib white dim mr3 mr4-ns" 
